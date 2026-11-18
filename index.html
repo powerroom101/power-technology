@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>GRAMFY — Demo v14</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:#06080d; color:#e8eefb; font-family:"Segoe UI", system-ui, sans-serif; min-height:100vh; overflow-x:hidden; }
+
+  /* SPLASH */
+  #splash { position:fixed; inset:0; background:radial-gradient(ellipse at 50% 38%, #0b2038 0%, #06080d 62%); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:60; transition:opacity .6s ease; }
+  #splash.hide { opacity:0; pointer-events:none; }
+  #splashCv { position:absolute; inset:0; width:100%; height:100%; transition:opacity .7s ease; }
+  .fallbackWord { font-size:54px; font-weight:800; letter-spacing:3px; display:none;
+    background:linear-gradient(100deg,#ffe9a8 0%,#f5c65c 35%,#37aee2 75%,#57c8ff 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 16px rgba(245,198,92,.45)); }
+  .finalWord { position:absolute; left:50%; top:50%; transform:translate(-50%,-58%); font-size:min(16.5vw, 104px); font-weight:900; letter-spacing:2px; white-space:nowrap;
+    opacity:0; transition:opacity .35s ease; pointer-events:none; color:#4fc3ff;
+    text-shadow:0 0 10px rgba(55,174,226,.6), 0 0 30px rgba(55,174,226,.35), 0 3px 0 #14557e, 0 6px 22px rgba(0,0,0,.6); }
+  .finalWord .gd { color:#ffcf4d; text-shadow:0 0 10px rgba(245,198,92,.6), 0 0 30px rgba(245,198,92,.4), 0 3px 0 #8a5f10, 0 6px 22px rgba(0,0,0,.6); }
+  .finalWord.show { opacity:1; animation:nameGlow 2s ease forwards, settle 2s ease forwards; }
+  @keyframes nameGlow { 0%{ text-shadow:0 0 6px rgba(55,174,226,.3), 0 3px 0 #14557e; } 35%{ text-shadow:0 0 18px rgba(87,200,255,.95), 0 0 46px rgba(55,174,226,.6), 0 3px 0 #14557e, 0 6px 22px rgba(0,0,0,.6); } 100%{ text-shadow:0 0 12px rgba(55,174,226,.65), 0 0 32px rgba(245,198,92,.35), 0 3px 0 #14557e, 0 6px 22px rgba(0,0,0,.6); } }
+  @keyframes settle { 0%{ transform:translate(-50%,-58%) scale(.94); } 30%{ transform:translate(-50%,-58%) scale(1.03); } 100%{ transform:translate(-50%,-58%) scale(1); } }
+  @keyframes shineMove { from{ background-position:110% 0; } to{ background-position:-30% 0; } }
+  @keyframes glowPulse2 { 0%{ filter:drop-shadow(0 0 4px rgba(245,198,92,.25)); } 30%{ filter:drop-shadow(0 0 24px rgba(245,198,92,.85)); } 65%{ filter:drop-shadow(0 0 14px rgba(55,174,226,.6)); } 100%{ filter:drop-shadow(0 0 17px rgba(245,198,92,.6)); } }
+  .tagline { position:relative; margin-top:min(58vh,430px); font-size:12px; letter-spacing:6px; color:#6f9fd8; opacity:0; animation:fadein .8s ease 1.6s forwards; text-transform:uppercase; }
+  @keyframes fadein { to { opacity:1; } }
+
+  /* APP FRAME */
+  #app { max-width:430px; margin:0 auto; padding:16px 16px 96px; opacity:0; transition:opacity .5s ease .1s; }
+  #app.show { opacity:1; }
+  .page { display:none; } .page.active { display:block; animation:pg .25s ease; }
+  @keyframes pg { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+  .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .logo { font-size:24px; font-weight:800; letter-spacing:3px; color:#4fc3ff; text-shadow:0 0 14px rgba(55,174,226,.45); }
+  .logo .lg-gold { color:#ffcf4d; text-shadow:0 0 14px rgba(245,198,92,.55); }
+  .logo.plain { color:#e8eefb; text-shadow:none; }
+  .uid { font-size:11px; color:#9fb6d8; border:1px solid #22344d; padding:5px 10px; border-radius:20px; letter-spacing:1px; }
+
+  /* stone-gloss cards */
+  .card { position:relative; overflow:hidden; background:linear-gradient(160deg,#131a29,#0b0e14); border:1px solid #263650; border-radius:18px; padding:18px; margin-bottom:14px; box-shadow:0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06); }
+  .card::after { content:""; position:absolute; top:-60%; left:-30%; width:55%; height:220%; transform:rotate(18deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent); pointer-events:none; }
+  .lbl { font-size:11px; letter-spacing:3px; color:#7e93b5; text-transform:uppercase; margin-bottom:6px; }
+  .balance { font-size:38px; font-weight:800; color:#fff; }
+  .balance small { font-size:15px; color:#7e93b5; font-weight:600; }
+  .row { display:flex; gap:10px; }
+  .btn { flex:1; text-align:center; padding:13px 0; border-radius:12px; font-size:14px; font-weight:800; letter-spacing:1px; cursor:pointer; border:none; color:#fff; position:relative; overflow:hidden; }
+  .btn::after { content:""; position:absolute; top:0; left:0; right:0; height:50%; background:linear-gradient(180deg,rgba(255,255,255,.22),transparent); pointer-events:none; }
+  .btn:active { transform:scale(.97); }
+  .btn-dep { background:linear-gradient(135deg,#12d68a,#0a9d63); box-shadow:0 6px 18px rgba(14,203,129,.30); }
+  .btn-wd { background:linear-gradient(135deg,#f6465d,#c2183f); box-shadow:0 6px 18px rgba(246,70,93,.28); }
+
+  .tgbar { display:flex; align-items:center; gap:12px; background:linear-gradient(120deg,rgba(34,158,217,.16),rgba(34,158,217,.05)); border:1px solid rgba(34,158,217,.45); border-radius:16px; padding:13px 16px; margin-bottom:14px; }
+  .tg-ic { width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,#37aee2,#1d7fc2); display:flex; align-items:center; justify-content:center; flex:0 0 auto; box-shadow:0 6px 16px rgba(34,158,217,.4); }
+  .tgbar b { display:block; font-size:14px; color:#dff2ff; }
+  .tgbar span { font-size:11px; color:#8fc9ec; }
+
+  .markets { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .markets .mkt { flex:1 1 40%; }
+  .ptabs { display:flex; gap:8px; margin-bottom:12px; }
+  .ptab { flex:1; text-align:center; padding:9px 0; border-radius:11px; border:1px solid #1f2a3d; background:#0d1017; color:#aebdd2; font-weight:800; font-size:13px; letter-spacing:1px; cursor:pointer; }
+  .ptab.sel { border-color:#37aee2; color:#fff; box-shadow:0 0 0 1px #37aee2; }
+  .ptab .rn { display:block; font-size:10px; font-weight:700; color:#12d68a; letter-spacing:.5px; margin-top:2px; }
+  .sesscard { border-top:1px solid #1c2740; padding-top:12px; margin-top:12px; }
+  .tprow { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; }
+  .tprow .tplab { font-size:11px; font-weight:800; letter-spacing:1.5px; color:#f5c65c; }
+  .tprow .tpwrap { display:flex; align-items:center; gap:6px; }
+  .tprow input { width:64px; background:#0a0f18; color:#fff; border:1px solid #263650; border-radius:9px; padding:7px 8px; font-size:13px; font-weight:700; outline:none; text-align:center; }
+  .tprow .tpbtn { padding:8px 14px; border:1px solid #a37f22; border-radius:9px; background:linear-gradient(120deg,#f5c65c,#e09f1f 60%,#b8860b); color:#231a02; font-size:12px; font-weight:800; letter-spacing:1px; cursor:pointer; }
+  .tprow .tpset { font-size:13px; font-weight:800; color:#12d68a; }
+  .tperr { display:none; margin-top:6px; font-size:12px; color:#f6465d; }
+  .mkt { flex:1; background:#0d1017; border:1px solid #1f2a3d; border-radius:14px; padding:12px 14px; }
+  .mkt b { display:block; font-size:15px; letter-spacing:1px; }
+  .mkt span { font-size:11px; color:#7186a3; letter-spacing:1px; }
+  .mkt-gold b { color:#f5c65c; } .mkt-tech b { color:#57b6ff; }
+  .mkt { cursor:pointer; transition:border-color .2s, box-shadow .2s; }
+  .mkt.sel { background:linear-gradient(120deg,#37aee2,#4a6cf7 60%,#8e54e9); border-color:transparent; box-shadow:0 10px 24px rgba(74,108,247,.40); }
+  .mkt.sel b, .mkt.sel span { color:#fff; }
+  .mkt-gold.sel { background:linear-gradient(120deg,#f5c65c,#e09f1f 60%,#b8860b); box-shadow:0 10px 24px rgba(245,198,92,.35); }
+  .mkt-gold.sel b, .mkt-gold.sel span { color:#231a02; }
+  .mkt.full { box-shadow:0 0 0 2px #f6465d inset !important; }
+  select { background:#0a0f18; color:#fff; border:1px solid #263650; border-radius:10px; padding:9px 10px; font-size:13px; font-weight:700; outline:none; max-width:150px; }
+  .stopbtn { width:100%; padding:15px 0; border:none; border-radius:14px; font-size:15px; font-weight:800; letter-spacing:2px; cursor:pointer; color:#fff; background:linear-gradient(120deg,#f6465d,#c2183f); box-shadow:0 8px 24px rgba(246,70,93,.3); }
+  .stopbtn.locked { background:#232c3f; color:#7787a0; box-shadow:none; cursor:not-allowed; }
+  .stopbtn.closing { background:#3a2c12; color:#f5c86e; box-shadow:none; cursor:default; }
+
+  /* activity ticker */
+  .ticker { display:flex; align-items:center; gap:10px; background:#0c1220; border:1px solid #1d2c47; border-radius:12px; padding:10px 14px; margin-bottom:14px; min-height:42px; }
+  .tick-dot { width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+  .ticker p { font-size:13px; color:#cfe0f7; transition:opacity .35s ease; }
+  .ticker p b { color:#fff; }
+
+  .status { display:flex; align-items:center; gap:8px; font-size:12px; letter-spacing:2px; color:#9fb6d8; margin-bottom:12px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:#41506a; }
+  .dot.on { background:#0ecb81; box-shadow:0 0 10px rgba(14,203,129,.85); }
+  input[type=number], input[type=text] { width:100%; background:#080b11; border:1px solid #263650; border-radius:12px; padding:14px; color:#fff; font-size:17px; font-weight:700; outline:none; }
+  input:focus { border-color:#37aee2; }
+  .hint { font-size:12px; color:#7186a3; margin-top:8px; line-height:1.5; }
+  .warn { font-size:12px; color:#ff7a6b; margin-top:8px; display:none; }
+  .warn:not(.hidden) { display:block; } /* re-check fix 2026-11-09: .warn hid itself even after .hidden was removed — withdraw/auth messages never showed */
+  #startBtn, .bigbtn { width:100%; margin-top:16px; padding:16px 0; border:none; border-radius:14px; font-size:16px; font-weight:800; letter-spacing:2px; cursor:pointer; color:#fff; display:flex; align-items:center; justify-content:center; gap:10px; position:relative; overflow:hidden; }
+  #startBtn::after, .bigbtn::after { content:""; position:absolute; top:0; left:0; right:0; height:50%; background:linear-gradient(180deg,rgba(255,255,255,.20),transparent); pointer-events:none; }
+  #startBtn { background:linear-gradient(120deg,#37aee2,#4a6cf7 55%,#8e54e9); box-shadow:0 8px 24px rgba(74,108,247,.35); }
+  #startBtn.running { background:linear-gradient(120deg,#f6465d,#c2183f); box-shadow:0 8px 24px rgba(246,70,93,.30); }
+  .bigbtn:active, #startBtn:active { transform:scale(.98); }
+
+  /* chart */
+  .chart-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .price { font-size:24px; font-weight:800; }
+  .price.up { color:#12d68a; } .price.dn { color:#f6465d; }
+  canvas { width:100%; height:230px; display:block; background:#090d15; border:1px solid #1c2a44; border-radius:14px; }
+  .live-badge { font-size:11px; letter-spacing:2px; color:#ff8f9e; display:flex; align-items:center; gap:6px; }
+  .live-badge i { width:8px; height:8px; border-radius:50%; background:#f6465d; display:inline-block; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.25 } }
+  .stat-grid { display:flex; gap:10px; margin-top:14px; }
+  .stat { flex:1; background:#0d1017; border:1px solid #1f2a3d; border-radius:14px; padding:12px; text-align:center; }
+  .stat span { display:block; font-size:10px; letter-spacing:2px; color:#7186a3; margin-bottom:4px; }
+  .stat b { font-size:16px; }
+
+  /* tx list */
+  .tx { display:flex; align-items:center; gap:12px; padding:12px 2px; border-bottom:1px solid #17233a; }
+  .tx:last-child { border-bottom:none; }
+  .tx-ic { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .tx-ic.dep { background:rgba(14,203,129,.14); color:#12d68a; }
+  .tx-ic.wd { background:rgba(246,70,93,.13); color:#f6465d; }
+  .tx-ic.fee { background:rgba(245,198,92,.12); color:#f5c65c; }
+  .tx-main { flex:1; } .tx-main b { display:block; font-size:14px; } .tx-main span { font-size:11px; color:#7186a3; }
+  .tx-amt { font-weight:800; font-size:14px; }
+  .tx-amt.plus { color:#12d68a; } .tx-amt.minus { color:#f6465d; }
+  .badge { font-size:10px; padding:3px 8px; border-radius:10px; letter-spacing:1px; }
+  .badge.ok { background:rgba(14,203,129,.15); color:#12d68a; }
+  .badge.pend { background:rgba(245,198,92,.15); color:#f5c65c; }
+
+  .addr { background:#080b11; border:1px dashed #36507c; border-radius:12px; padding:14px; font-size:13px; word-break:break-all; color:#bcd7ff; line-height:1.6; }
+  .copybtn { margin-top:10px; width:100%; padding:12px 0; border-radius:12px; border:1px solid #2b4a77; background:#10203a; color:#9fd0ff; font-weight:800; letter-spacing:1px; cursor:pointer; }
+
+  /* profile */
+  .prof-head { display:flex; align-items:center; gap:14px; }
+  .avatar { width:64px; height:64px; border-radius:50%; background:linear-gradient(140deg,#37aee2,#8e54e9); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; color:#fff; border:2px solid rgba(255,255,255,.25); box-shadow:0 8px 20px rgba(74,108,247,.35); flex:0 0 auto; }
+  .prof-head b { font-size:19px; display:block; }
+  .prof-head span { font-size:12px; color:#8fc9ec; }
+  .menu-row { display:flex; align-items:center; gap:12px; padding:15px 2px; border-bottom:1px solid #17233a; cursor:pointer; }
+  .menu-row:last-child { border-bottom:none; }
+  .menu-row .mi { width:36px; height:36px; border-radius:10px; background:#101827; border:1px solid #22334f; display:flex; align-items:center; justify-content:center; color:#9fd0ff; flex:0 0 auto; }
+  .menu-row .mt { flex:1; } .menu-row .mt b { display:block; font-size:14px; } .menu-row .mt span { font-size:11px; color:#7186a3; }
+  .pill { font-size:11px; font-weight:800; padding:6px 12px; border-radius:12px; border:none; cursor:pointer; color:#fff; background:linear-gradient(120deg,#37aee2,#4a6cf7); }
+  .pill.on { background:linear-gradient(135deg,#12d68a,#0a9d63); }
+  .rules { font-size:13px; color:#a9bcd9; line-height:1.9; padding-left:16px; }
+  .invite { background:linear-gradient(160deg,#2a2008,#171106); border:1px solid #8a6a1f; box-shadow:0 12px 32px rgba(0,0,0,.5), 0 0 24px rgba(245,198,92,.14), inset 0 1px 0 rgba(255,233,168,.25); }
+  .invite .lbl { color:#d9b45c; }
+  .invite h3 { font-size:19px; letter-spacing:1px; background:linear-gradient(120deg,#fff0bc,#f5c65c 55%,#b8860b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:4px; }
+  .invite .sub { font-size:12px; color:#c8ab63; margin-bottom:12px; }
+  .reflink { background:#0d0a04; border:1px dashed #8a6a1f; border-radius:12px; padding:12px; font-size:12.5px; color:#ffe9a8; word-break:break-all; }
+  .goldbtn { margin-top:10px; width:100%; padding:12px 0; border:none; border-radius:12px; font-weight:800; letter-spacing:1px; cursor:pointer; color:#241a04; background:linear-gradient(135deg,#ffe9a8,#f5c65c 55%,#d19a26); box-shadow:0 6px 18px rgba(245,198,92,.3); }
+  .goldbtn:active { transform:scale(.98); }
+  .tier { display:flex; justify-content:space-between; font-size:12.5px; padding:8px 2px; border-bottom:1px solid rgba(245,198,92,.14); color:#d8c491; }
+  .tier:last-child { border-bottom:none; }
+  .tier b { color:#ffe9a8; }
+  .tier.cur { background:rgba(245,198,92,.10); border-radius:8px; padding:8px 8px; color:#fff; }
+  .pbar { height:8px; border-radius:6px; background:#241b07; overflow:hidden; margin-top:8px; }
+  .pbar i { display:block; height:100%; background:linear-gradient(90deg,#f5c65c,#ffe9a8); border-radius:6px; }
+
+  /* bottom nav */
+  #nav { position:fixed; left:0; right:0; bottom:0; z-index:40; background:rgba(9,12,19,.92); backdrop-filter:blur(14px); border-top:1px solid #1d2c47; }
+  #nav .inner { max-width:430px; margin:0 auto; display:flex; }
+  .navbtn { flex:1; padding:10px 0 12px; text-align:center; color:#66788f; font-size:11px; letter-spacing:1px; cursor:pointer; }
+  .bell { position:relative; margin-left:auto; cursor:pointer; color:#9fb4d8; display:flex; align-items:center; }
+  .bell .bdg { position:absolute; top:-6px; right:-8px; background:#f6465d; color:#fff; font-size:10px; font-weight:800; min-width:17px; height:17px; border-radius:9px; display:none; align-items:center; justify-content:center; padding:0 4px; }
+  .nrow { padding:12px 4px; border-bottom:1px solid rgba(120,150,200,.12); }
+  .nrow:last-child { border-bottom:none; }
+  .nrow .nt { font-size:14px; font-weight:700; color:#dbe6f7; }
+  .nrow.unread .nt { color:#fff; }
+  .nrow.unread .nt::before { content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:#f5c65c; margin-right:7px; vertical-align:2px; }
+  .nrow .nx { font-size:13px; color:#8fa5c4; margin-top:2px; line-height:1.5; }
+  .nrow .na { font-size:11px; color:#5f7292; margin-top:3px; letter-spacing:.5px; }
+  .navbtn.goldnav { color:#a8853c; } .navbtn.goldnav.active { color:#ffcf4d; }
+  /* LIVE SUPPORT — floating on Profile only: draggable, no close.
+     Green pulse = support is ONLINE right now. */
+  #supFab { position:fixed; right:14px; bottom:104px; z-index:60; display:flex; flex-direction:column; align-items:center; gap:5px; touch-action:none; -webkit-user-select:none; user-select:none; cursor:grab; }
+  #supFab:active { cursor:grabbing; }
+  #supBtn { position:relative; width:56px; height:56px; border-radius:50%; background:linear-gradient(145deg,#232f47,#0d1420); border:2px solid #d4af37; box-shadow:0 8px 22px rgba(0,0,0,.55), 0 0 0 4px rgba(212,175,55,.12); display:flex; align-items:center; justify-content:center; color:#ffcf4d; }
+  #supBtn .on-dot { position:absolute; top:1px; right:1px; width:14px; height:14px; border-radius:50%; background:#22e584; border:2.5px solid #0d1420; }
+  #supBtn .on-dot::after { content:''; position:absolute; inset:-7px; border-radius:50%; border:2px solid rgba(34,229,132,.55); animation:supPulse 1.6s ease-out infinite; }
+  @keyframes supPulse { 0% { transform:scale(.45); opacity:1; } 100% { transform:scale(1.15); opacity:0; } }
+  #supLbl { font-size:10px; font-weight:700; letter-spacing:.5px; color:#ffe9a8; background:rgba(9,12,19,.82); border:1px solid #4a3a14; border-radius:99px; padding:3px 9px; white-space:nowrap; }
+  #supPanel { position:fixed; inset:0; z-index:70; display:none; align-items:center; justify-content:center; background:rgba(2,4,8,.62); backdrop-filter:blur(3px); }
+  #supPanel.open { display:flex; }
+  .sup-card { position:relative; width:min(320px,88vw); background:linear-gradient(160deg,#141c2c,#0b101b); border:1px solid #6b5316; border-radius:18px; padding:22px 18px 18px; text-align:center; box-shadow:0 18px 44px rgba(0,0,0,.6); }
+  .sup-x { position:absolute; top:8px; right:12px; background:none; border:none; color:#8fa3c4; font-size:22px; line-height:1; cursor:pointer; padding:4px; }
+  .sup-ava { position:relative; width:62px; height:62px; margin:0 auto 10px; border-radius:50%; background:linear-gradient(145deg,#232f47,#0d1420); border:2px solid #d4af37; display:flex; align-items:center; justify-content:center; color:#ffcf4d; }
+  .sup-ava .on-dot { position:absolute; bottom:2px; right:2px; width:14px; height:14px; border-radius:50%; background:#22e584; border:2.5px solid #0d1420; }
+  .sup-ttl { font-size:17px; font-weight:800; color:#fff; letter-spacing:.3px; }
+  .sup-on { color:#22e584; font-size:12px; font-weight:700; margin-top:3px; }
+  .sup-txt { color:#a9bcd9; font-size:13px; line-height:1.55; margin:10px 2px 16px; }
+  .sup-dm { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:800; letter-spacing:.4px; color:#fff; background:linear-gradient(120deg,#37aee2,#229ed9 55%,#1c86bd); box-shadow:0 8px 20px rgba(34,158,217,.35); cursor:pointer; }
+  /* leaderboard */
+  .board-title { font-size:22px; font-weight:800; letter-spacing:2px; background:linear-gradient(120deg,#fff0bc,#f5c65c 55%,#b8860b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .faq { background:linear-gradient(160deg,#221a07,#100c04); border:1px solid #6b5316; border-radius:16px; padding:16px 18px; margin-bottom:14px; }
+  .faq .q { font-size:14px; font-weight:800; color:#ffe9a8; margin-top:12px; } .faq .q:first-child { margin-top:0; }
+  .faq .a { font-size:13px; color:#d8c491; line-height:1.6; margin-top:3px; }
+  .podium { display:flex; align-items:flex-end; gap:10px; margin-bottom:14px; }
+  .pod { flex:1; text-align:center; background:#12100a; border:1px solid #3d2f0e; border-radius:16px; padding:14px 6px 12px; }
+  .pod.first { background:linear-gradient(170deg,#2e2208,#171106); border-color:#a37f22; padding-top:20px; box-shadow:0 0 26px rgba(245,198,92,.16); }
+  .pod .av { width:52px; height:52px; border-radius:50%; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; color:#fff; border:2px solid rgba(255,255,255,.3); }
+  .pod.first .av { width:64px; height:64px; font-size:25px; }
+  .pod .rk { font-size:11px; letter-spacing:2px; color:#c8ab63; }
+  .pod .nm { font-size:13px; font-weight:700; color:#fff; margin:2px 0; white-space:nowrap; overflow:hidden; }
+  .pod .pt { font-size:12px; color:#ffcf4d; font-weight:800; }
+  .lbrow { display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(245,198,92,.12); }
+  .lbrow:last-child { border-bottom:none; }
+  .lbrow .no { width:26px; text-align:center; font-weight:800; color:#c8ab63; font-size:14px; }
+  .lbrow .av { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; flex:0 0 auto; border:1.5px solid rgba(255,255,255,.25); }
+  .lbrow .nm { flex:1; font-size:14px; font-weight:600; }
+  .lbrow .pt { font-weight:800; color:#ffcf4d; font-size:14px; }
+  .lbrow .pt small { display:block; text-align:right; font-size:9px; color:#a8853c; letter-spacing:1px; }
+  .ownrank { position:sticky; bottom:86px; background:linear-gradient(120deg,#2e2208,#1a1306); border:1px solid #a37f22; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; box-shadow:0 12px 30px rgba(0,0,0,.55); }
+  .ownrank .av { width:44px; height:44px; border-radius:50%; background:linear-gradient(140deg,#37aee2,#8e54e9); display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; flex:0 0 auto; }
+  .ownrank .mid { flex:1; } .ownrank .mid b { display:block; font-size:14px; } .ownrank .mid span { font-size:11px; color:#c8ab63; }
+  .ownrank .rk { text-align:right; } .ownrank .rk b { display:block; font-size:19px; color:#ffcf4d; } .ownrank .rk span { font-size:9px; letter-spacing:1.5px; color:#a8853c; }
+  .navbtn svg { display:block; margin:0 auto 4px; }
+  .navbtn.active { color:#57b6ff; }
+  .hidden { display:none !important; }
+  .back { font-size:13px; color:#9fd0ff; cursor:pointer; margin-bottom:12px; display:inline-block; }
+  /* withdraw premium animations */
+  @keyframes wdShine { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  @keyframes wdGlow { 0%,100% { box-shadow: 0 8px 24px rgba(246,70,93,.30); } 50% { box-shadow: 0 8px 36px rgba(246,70,93,.55); } }
+  @keyframes wdIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes wdPop { 0% { transform: scale(.92); opacity: 0; } 60% { transform: scale(1.03); } 100% { transform: scale(1); opacity: 1; } }
+  #w-wd .card { animation: wdIn .45s ease both; }
+  .wd-band { background-size: 220% 220%; animation: wdShine 5s ease infinite; }
+  #wdForm .bigbtn { animation: wdGlow 2.6s ease-in-out infinite; }
+  #wdOk:not(.hidden) { animation: wdPop .35s ease both; }
+  #w-wd input { transition: border-color .25s ease, box-shadow .25s ease; }
+  #w-wd input:focus { border-color: #f6465d; box-shadow: 0 0 0 3px rgba(246,70,93,.18); outline: none; }
+  /* QR codes sit in a white box with real padding: scanners (Bitget,
+     exchanges, authenticator apps) need the white quiet-zone border
+     around the code — without it many scanners cannot read it at all.
+     The code is generated at display size so modules stay sharp. */
+  .qrbox { background:#ffffff; padding:14px; border-radius:16px; display:inline-block; line-height:0; }
+  #authQr img, #authQr canvas, #authQr table { width:148px !important; height:148px !important; }
+  #depQr img, #depQr canvas, #depQr table { width:200px !important; height:200px !important; }
+  /* deposit success celebration */
+  .deps-card { position:relative; width:min(86vw,340px); background:linear-gradient(165deg,#191307,#0c101f); border:1px solid #a37f22; border-radius:22px; padding:30px 22px 22px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.6); overflow:hidden; }
+  #depSuccess.open .deps-card { animation: wdPop .4s ease both; }
+  .deps-ring { display:flex; justify-content:center; margin-bottom:12px; }
+  .deps-circ { stroke-dasharray:246; stroke-dashoffset:246; }
+  .deps-check { stroke-dasharray:48; stroke-dashoffset:48; }
+  #depSuccess.open .deps-circ { animation: depsDraw .7s ease forwards; }
+  #depSuccess.open .deps-check { animation: depsDraw .45s .55s ease forwards; }
+  @keyframes depsDraw { to { stroke-dashoffset:0; } }
+  .deps-title { font-weight:900; letter-spacing:2px; color:#ffe9a8; font-size:17px; }
+  .deps-amt { font-size:34px; font-weight:900; color:#12d68a; margin-top:8px; }
+  .deps-sub { color:#9fb4d8; font-size:13px; margin-top:4px; }
+  #depParticles { position:absolute; inset:0; pointer-events:none; }
+  .dep-particle { position:absolute; top:-8px; border-radius:50%; pointer-events:none; animation: depFall linear forwards; }
+  @keyframes depFall { to { transform: translateY(360px) rotate(320deg); opacity:0; } }
+</style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<div id="splash">
+  <canvas id="splashCv"></canvas>
+  <div class="finalWord" id="finalWord">GRAM<span class="gd">FY</span></div>
+  <div class="fallbackWord" id="fallbackWord">GRAMFY</div>
+</div>
+
+<div id="app">
+  <!-- HOME -->
+  <section class="page active" id="pg-home">
+    <div class="top"><div class="logo">GRAM<span class="lg-gold">FY</span></div><div class="uid" id="homeId">ID: —</div><div class="bell" onclick="openNotifs()"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 9a6 6 0 10-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9z"/><path d="M10 20a2.2 2.2 0 003.8 0"/></svg><span class="bdg" id="bellBadge">0</span></div></div>
+    <div class="ticker" id="tickerBox" style="display:none"><div class="tick-dot" id="tickDot" style="background:#12d68a"></div><p id="tickText">Live activity</p></div>
+    <div class="card">
+      <div class="lbl">Balance</div>
+      <div class="balance">$0.00 <small>USDT</small></div>
+      <div class="row" style="margin-top:14px">
+        <div class="btn btn-dep" data-i18n="deposit" onclick="goWallet('dep')">DEPOSIT</div>
+        <div class="btn btn-wd" data-i18n="withdraw" onclick="goWallet('wd')">WITHDRAW</div>
+      </div>
+    </div>
+    <div class="lbl" style="margin-bottom:8px">Select Market</div>
+    <div class="markets">
+      <div class="mkt mkt-gold" id="mkt-XAUUSD" onclick="selectMkt('XAUUSD')"><b>XAUUSD</b><span>GOLD · M1</span></div>
+      <div class="mkt mkt-tech" id="mkt-USTEC" onclick="selectMkt('USTEC')"><b>USTEC</b><span>US TECH 100 · M1</span></div>
+      <div class="mkt" id="mkt-BTCUSD" onclick="selectMkt('BTCUSD')"><b style="color:#f7931a">BTC</b><span>BITCOIN · M1</span></div>
+      <div class="mkt" id="mkt-ETHUSD" onclick="selectMkt('ETHUSD')"><b style="color:#8ea2ff">ETH</b><span>ETHEREUM · M1</span></div>
+    </div>
+    <div class="card">
+      <div class="status"><div class="dot" id="dot"></div><span id="statusText">BOT OFF</span></div>
+      <div class="lbl">Max Loss (USD) — Stop Loss</div>
+      <input type="number" id="loss" value="10" min="5" step="1">
+      <div class="hint" id="lossHint">Minimum for Gold is $10. Lot size is automatic — 20% of your max loss is risked per trade.</div>
+      <div class="warn" id="warn">Max loss cannot be below $5.</div>
+      <div class="warn" id="warnMkt">Select a market first.</div>
+      <button id="startBtn"><svg id="btnIcon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3l14 9-14 9z"/></svg><span id="btnText">START BOT</span></button>
+    </div>
+  </section>
+
+  <!-- CHART -->
+  <section class="page" id="pg-chart">
+    <div class="top"><div class="logo plain" style="font-size:20px">CHART</div><div class="live-badge"><i></i>LIVE</div></div>
+    <div class="ptabs">
+      <div class="ptab sel" id="ptab-XAUUSD" onclick="setChartPair('XAUUSD')">XAU<span class="rn" id="prn-XAUUSD"></span></div>
+      <div class="ptab" id="ptab-USTEC" onclick="setChartPair('USTEC')">USTEC<span class="rn" id="prn-USTEC"></span></div>
+      <div class="ptab" id="ptab-BTCUSD" onclick="setChartPair('BTCUSD')">BTC<span class="rn" id="prn-BTCUSD"></span></div>
+      <div class="ptab" id="ptab-ETHUSD" onclick="setChartPair('ETHUSD')">ETH<span class="rn" id="prn-ETHUSD"></span></div>
+    </div>
+    <div class="card">
+      <div class="chart-head">
+        <div><div class="lbl" style="margin:0">XAUUSD · M1</div><div class="price up" id="priceEl">—</div></div>
+        <div style="text-align:right"><div class="lbl" style="margin:0">BOT</div><b id="chartBotState" style="color:#66788f">OFF</b></div>
+      </div>
+      <canvas id="cv" width="380" height="230"></canvas>
+      <div class="stat-grid">
+        <div class="stat"><span>SESSION P/L</span><b id="stPl" style="color:#12d68a">+$0.00</b></div>
+        <div class="stat"><span>POSITION</span><b id="stPos">—</b></div>
+        <div class="stat"><span>LOT (AUTO)</span><b id="stLot">—</b></div>
+      </div>
+      <button class="stopbtn locked" id="stopBtn" style="margin-top:14px" onclick="tryStopTop()">STOP BOT</button>
+      <div class="hint hidden" id="stopNote"></div>
+      <div id="sessCards"></div>
+    </div>
+    <div class="card" style="border-color:#5b2432; background:linear-gradient(160deg,#1d0d13,#0b0e14); display:none" id="newsBanner">
+      <b style="color:#ff8f9e; letter-spacing:1px">NEWS EFFECT</b>
+      <div class="hint" style="color:#d8a7b0; margin-top:4px">High-impact news right now — please wait until the news ends.</div>
+    </div>
+    <div class="card" style="border-color:#5b2432; background:linear-gradient(160deg,#1d0d13,#0b0e14); display:none" id="closedBanner">
+      <b style="color:#ff8f9e; letter-spacing:1px">MARKET CLOSED</b>
+      <div class="hint" style="color:#d8a7b0; margin-top:4px" id="closedSub">This market is closed right now — trading opens Monday 6:00 AM.</div>
+    </div>
+    <div class="lbl" style="margin:4px 2px 8px">Position History</div>
+    <div class="card" id="histCard" style="padding-top:6px; padding-bottom:6px">
+      <div class="hint" id="histEmpty" style="padding:8px 0">No finished sessions yet.</div>
+      <div id="histList"></div>
+    </div>
+    <div class="hint" id="chartNote" style="display:none">Price is live from the trading engine. Your session P/L below is always live too.</div>
+    <div class="hint">Session P/L moves only with real trades from the trading engine.</div>
+  </section>
+
+  <!-- WALLET -->
+  <section class="page" id="pg-wallet">
+    <div class="top"><div class="logo plain" style="font-size:20px">WALLET</div><div class="uid">USDT · BEP20</div></div>
+
+    <div id="w-main">
+      <div class="card">
+        <div class="lbl">Balance</div>
+        <div class="balance">$0.00 <small>USDT</small></div>
+        <div class="row" style="margin-top:14px">
+          <div class="btn btn-dep" data-i18n="deposit" onclick="showSub('dep')">DEPOSIT</div>
+          <div class="btn btn-wd" data-i18n="withdraw" onclick="showSub('wd')">WITHDRAW</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="w-dep" class="hidden">
+      <span class="back" data-i18n="back_wallet" onclick="showSub('main')">&#8592; Back to Wallet</span>
+      <div class="card">
+        <div class="lbl">Deposit — choose a method</div>
+        <div onclick="showSub('depusdt')" style="display:flex; align-items:center; gap:13px; background:linear-gradient(120deg,#26a17b,#157a5b); border-radius:14px; padding:15px 16px; cursor:pointer; box-shadow:0 10px 26px rgba(38,161,123,.35)">
+          <span style="flex:0 0 auto; width:42px; height:42px; border-radius:50%; background:#fff; color:#26a17b; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:900">&#8366;</span>
+          <span style="flex:1"><b style="font-size:17px; letter-spacing:.5px">USDT</b><br><span style="font-size:12.5px; opacity:.85">BEP20 · BSC network</span></span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6"><path d="M9 5l7 7-7 7"/></svg>
+        </div>
+        <div style="display:flex; align-items:center; gap:13px; background:#131c30; border:1px dashed #2c3d5f; border-radius:14px; padding:15px 16px; margin-top:12px; opacity:.75">
+          <span style="flex:0 0 auto; width:42px; height:42px; border-radius:50%; background:#1b2740; color:#7d90b5; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:900">+</span>
+          <span style="flex:1"><b style="font-size:15px; color:#aebddb">More options</b><br><span style="font-size:12.5px; color:#7186ab">Coming soon</span></span>
+        </div>
+        <div class="hint">More deposit methods will be added here soon.</div>
+      </div>
+    </div>
+
+    <div id="w-depusdt" class="hidden">
+      <span class="back" onclick="showSub('dep')">&#8592; Back</span>
+      <div class="card">
+        <div class="lbl">Deposit · USDT (BEP20 only)</div>
+        <div class="hint" style="margin:0 0 12px">Your personal deposit address — it never changes. Scan the QR code or copy the address, then send USDT on the BEP20 network.</div>
+        <div id="depQr" style="display:flex; justify-content:center; margin:4px 0 14px"></div>
+        <div class="addr" id="depAddr" onclick="copyAddrTap(this)" style="cursor:pointer">Loading…</div>
+        <div class="hint" style="text-align:center">Tap the address to copy</div>
+        <div style="color:#f6465d; font-weight:800; letter-spacing:.5px; margin-top:14px">ONLY USDT — BEP20 (BSC) NETWORK</div>
+        <div style="color:#f6465d; font-weight:700; margin-top:5px">Minimum deposit $20 — deposits below $20 will NOT be credited.</div>
+        <div class="hint">Your balance is credited automatically after network confirmation.</div>
+      </div>
+    </div>
+    <div id="w-wd" class="hidden">
+      <span class="back" data-i18n="back_wallet" onclick="showSub('main')">&#8592; Back to Wallet</span>
+      <div class="card" id="wdGate" style="background:linear-gradient(165deg,#170d16,#0c101f); border-color:#4a2030">
+        <div class="wd-band" style="background:linear-gradient(120deg,#f6465d,#b8860b,#c2183f,#f6465d); border-radius:10px; padding:10px 14px; font-weight:800; letter-spacing:1.5px; margin-bottom:14px; color:#fff">WITHDRAW · USDT</div>
+        <div class="lbl">Withdraw Locked</div>
+        <div class="hint" style="margin:0 0 12px">Withdraw needs the Authenticator (2FA) first. Add it in Profile — Security, then come back here.</div>
+        <button class="bigbtn" style="background:linear-gradient(120deg,#37aee2,#4a6cf7)" onclick="goPage('pg-profile')">GO TO PROFILE — SECURITY</button>
+      </div>
+      <div class="card hidden" id="wdForm" style="background:linear-gradient(165deg,#170d16,#0c101f); border-color:#4a2030">
+        <div class="wd-band" style="background:linear-gradient(120deg,#f6465d,#b8860b,#c2183f,#f6465d); border-radius:10px; padding:10px 14px; font-weight:800; letter-spacing:1.5px; margin-bottom:14px; color:#fff">WITHDRAW · USDT</div>
+        <div class="lbl">Withdraw · USDT (BEP20 / Binance Pay)</div>
+        <div class="stat-grid" style="margin:0 0 14px">
+          <div class="stat"><span>BALANCE</span><b id="wdBal">$0.00</b></div>
+          <div class="stat"><span>LOCKED (BOT)</span><b id="wdLocked" style="color:#f5c65c">$0.00</b></div>
+          <div class="stat"><span>WITHDRAWABLE</span><b id="wdAvail" style="color:#12d68a">$0.00</b></div>
+        </div>
+        <div class="lbl" style="margin-top:6px">Your BEP20 address</div>
+        <input type="text" id="wdAddr" placeholder="0x...">
+        <div class="lbl" style="margin-top:14px">Amount (USDT)</div>
+        <input type="number" id="wdAmt" placeholder="0.00">
+        <div class="hint" id="wdPreview" style="margin-top:8px">Minimum withdraw $20 · Fee: 30% of profit · No profit in it? Fee is $1.</div>
+        <div class="lbl" style="margin-top:14px">Authenticator Code</div>
+        <input type="text" id="wdCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code">
+        <div class="warn hidden" id="wdWarn"></div>
+        <div class="hint">Fee: 30% of the profit part only. No profit in the amount? A flat $1 fee. Withdrawals are fast and secure — USDT is sent directly to your own BEP20 address.</div>
+        <button class="bigbtn" style="background:linear-gradient(135deg,#f6465d,#c2183f); box-shadow:0 8px 24px rgba(246,70,93,.3)" onclick="reqWithdraw()" data-i18n="request_withdraw">REQUEST WITHDRAW</button>
+        <div class="hint hidden" id="wdOk" style="color:#12d68a">Withdraw requested — fast &amp; secure payout in process.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="page" id="pg-profile">
+    <div class="top"><div class="logo plain" style="font-size:20px" data-i18n="profile">PROFILE</div></div>
+    <div class="card">
+      <div class="prof-head">
+        <div class="avatar" id="profAvatar"></div>
+        <div><b id="profName">User</b><span id="profUser">via Telegram</span><div class="uid" id="profId" style="margin-top:6px; display:inline-block">ID: —</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><span>TOTAL PROFIT</span><b style="color:#12d68a" id="profProfit">+$0.00</b></div>
+        <div class="stat"><span>DEPOSITS</span><b id="statDep">$0.00</b></div>
+        <div class="stat"><span>WITHDRAWN</span><b id="statWd">$0.00</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">Settings &amp; Security</div>
+      <div class="menu-row"><div class="mi"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.6l-3.1 14.7c-.23 1.03-.85 1.28-1.72.8l-4.76-3.51-2.3 2.21c-.25.26-.47.47-.96.47l.35-4.93 8.97-8.1c.39-.35-.08-.54-.6-.2L7.6 13.5 2.83 12c-1.04-.32-1.06-1.04.22-1.54L20.7 3.4c.86-.32 1.62.2 1.2 1.2z"/></svg></div><div class="mt"><b data-i18n="telegram_login">Telegram Login</b><span>Automatic — you stay logged in, no password</span></div><span class="badge ok">ACTIVE</span></div>
+      <div class="menu-row"><div class="mi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></div><div class="mt"><b data-i18n="authenticator">Authenticator (2FA)</b><span>Required before any withdraw</span></div><button class="pill" id="authBtn" onclick="toggleAuth()">ADD</button></div>
+      <div class="menu-row"><div class="mi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></svg></div><div class="mt"><b data-i18n="language">Language</b><span>App language</span></div><select id="langSel" onchange="setLang(this.value)"><option value="en">English</option><option value="bn">বাংলা</option><option value="hi">हिन्दी</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="es">Español</option><option value="pt">Português</option><option value="tr">Türkçe</option><option value="ar">العربية</option><option value="id">Bahasa Indonesia</option><option value="vi">Tiếng Việt</option><option value="ur">اردو</option></select></div>
+      <div class="menu-row" onclick="goPage('pg-board')"><div class="mi" style="color:#ffcf4d; border-color:#6b5316; background:#171106"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0zM7 6H4a2 2 0 002 4h1M17 6h3a2 2 0 01-2 4h-1"/></svg></div><div class="mt"><b style="color:#ffe9a8" data-i18n="leaderboard">Leaderboard</b><span>GF Points · Your rank: <b id="profRank">100+</b></span></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a8853c" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></div>
+    </div>
+    <div class="card invite">
+      <div class="lbl">Invite &amp; Earn</div>
+      <h3 data-i18n="invite_friends">INVITE FRIENDS</h3>
+      <div class="sub">Earn commission from your referrals' profits — paid from the platform fee.</div>
+      <div class="reflink" id="refLink">https://t.me/GRAMFY_TRADINGBOT</div>
+      <button class="goldbtn" onclick="copyRef(this)">COPY INVITE LINK</button>
+      <div class="stat-grid" style="margin-top:14px">
+        <div class="stat" style="background:#141003; border-color:#4a3a14"><span style="color:#c8ab63">REFERRALS</span><b style="color:#ffe9a8" id="refCount">0</b></div>
+        <div class="stat" style="background:#141003; border-color:#4a3a14"><span style="color:#c8ab63">COMMISSION EARNED</span><b style="color:#ffe9a8" id="refEarn">$0.00</b></div>
+      </div>
+      <div class="hint" id="tierHint" style="color:#c8ab63; margin-top:12px">Your tier: <b style="color:#ffe9a8">0%</b> — earn 5% from 100 referrals</div>
+      <div class="pbar"><i id="tierBar" style="width:0%"></i></div>
+      <div style="margin-top:12px">
+        <div class="tier"><span>100 – 199 referrals</span><b>5%</b></div>
+        <div class="tier"><span>200 – 299 referrals</span><b>10%</b></div>
+        <div class="tier"><span>300 – 499 referrals</span><b>12%</b></div>
+        <div class="tier"><span>500 – 999 referrals</span><b>15%</b></div>
+        <div class="tier"><span>1000+ referrals</span><b>20%</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl" data-i18n="rules">Rules</div>
+      <ul class="rules">
+        <li>Deposit and withdraw: USDT BEP20 only.</li>
+        <li>Minimum max-loss setting: $5. The bot stops at your loss limit.</li>
+        <li>Lot size is automatic — based on balance and loss limit.</li>
+        <li>Minimum withdraw: $20. Withdraw fee: 30% of the profit part. If the amount holds no profit, the fee is a flat $1.</li>
+        <li>Deposits and withdrawals are fast and secure.</li>
+        <li>Trading is automatic and carries risk. Past results do not guarantee future profit.</li>
+      </ul>
+    </div>
+    <!-- LIVE SUPPORT — Profile only, draggable, cannot be closed -->
+    <div id="supFab">
+      <div id="supBtn"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 13a8 8 0 0116 0"/><rect x="2.5" y="13" width="4.5" height="6.5" rx="2.2"/><rect x="17" y="13" width="4.5" height="6.5" rx="2.2"/><path d="M19.5 19.5c0 1.7-1.6 2.5-4 2.5h-2"/></svg><span class="on-dot"></span></div>
+      <div id="supLbl">Live Support</div>
+    </div>
+    <div id="supPanel" onclick="if(event.target===this)closeSupport()">
+      <div class="sup-card">
+        <button class="sup-x" onclick="closeSupport()">&#215;</button>
+        <div class="sup-ava"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 13a8 8 0 0116 0"/><rect x="2.5" y="13" width="4.5" height="6.5" rx="2.2"/><rect x="17" y="13" width="4.5" height="6.5" rx="2.2"/><path d="M19.5 19.5c0 1.7-1.6 2.5-4 2.5h-2"/></svg><span class="on-dot"></span></div>
+        <div class="sup-ttl">Live Support</div>
+        <div class="sup-on">&#9679; Online now</div>
+        <div class="sup-txt">Any question or a problem with your account? Message our support team on Telegram — fast reply.</div>
+        <button class="sup-dm" onclick="openSupportDm()"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.6l-3.1 14.7c-.23 1.03-.85 1.28-1.72.8l-4.76-3.51-2.3 2.21c-.25.26-.47.47-.96.47l.35-4.93 8.97-8.1c.39-.35-.08-.54-.6-.2L7.6 13.5 2.83 12c-1.04-.32-1.06-1.04.22-1.54L20.7 3.4c.86-.32 1.62.2 1.2 1.2z"/></svg>DM</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTIFICATIONS -->
+  <section class="page" id="pg-notif">
+    <div class="top"><button class="back" onclick="goPage('pg-home')">&#8592; Back</button><div class="logo plain" style="font-size:20px">NOTIFICATIONS</div></div>
+    <div class="card" id="notifList"><div class="hint">Loading…</div></div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="page" id="pg-auth">
+    <div class="top"><button class="back" onclick="goPage('pg-profile')">&#8592; Back</button><div class="logo plain" style="font-size:20px">AUTHENTICATOR</div></div>
+    <div class="card" id="authSetupCard">
+      <div class="lbl">Scan with Google Authenticator</div>
+      <div style="display:flex; justify-content:center; margin:12px 0"><div id="authQr" style="background:#fff; padding:10px; border-radius:14px; width:168px; height:168px"></div></div>
+      <div class="hint" style="text-align:center">No camera? Enter this key manually in the app:</div>
+      <div class="reflink" id="authKey" style="word-break:break-all; text-align:center; margin-top:8px">&#8212;</div>
+      <div class="hint">Account: GRAMFY &#183; Type: Time based</div>
+      <input type="text" id="authCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code from the app" style="margin-top:12px">
+      <button class="bigbtn" style="margin-top:10px; background:linear-gradient(120deg,#37aee2,#4a6cf7)" onclick="enableAuth()">ENABLE</button>
+      <div class="warn hidden" id="authMsg"></div>
+    </div>
+    <div class="card hidden" id="authOnCard">
+      <div class="lbl">Authenticator</div>
+      <p class="hint" style="font-size:14px; color:#cfe0ff">Your Authenticator is ON. Every withdraw will ask for the 6-digit code from your app.</p>
+    </div>
+    <div class="card">
+      <div class="lbl">How it works</div>
+      <p class="hint">1. Open Google Authenticator (or Authy) on your phone.<br>2. Tap + &#8594; Scan a QR code — or enter the key manually.<br>3. Type the 6-digit code here and tap ENABLE.</p>
+    </div>
+  </section>
+
+  <section class="page" id="pg-board">
+    <div class="top"><div class="board-title" data-i18n="leaderboard">LEADERBOARD</div><div class="uid" style="border-color:#6b5316; color:#ffcf4d">GF POINTS</div></div>
+    <div class="faq">
+      <div class="q">What are GF Points?</div>
+      <div class="a">GF Points are GRAMFY reward points. You earn them when a bot session ends — they are your share record for the future.</div>
+      <div class="q">How do I earn GF Points?</div>
+      <div class="a">When your session ends, you earn GF Points equal to your session's max loss, plus any profit the session made. Example: a $5 session earns 5 GF Points — and if it also made $5 profit, you earn 10 GF Points.</div>
+      <div class="q">What will GF Points give me in the future?</div>
+      <div class="a">GF Point holders will get future benefits: airdrop allocation, trading fee discounts and early access to new GRAMFY features. More points = a bigger share.</div>
+    </div>
+    <div class="podium">
+      <div class="pod"><div class="av" style="background:#0b0f1c"></div><div class="rk">2ND</div><div class="nm">—</div><div class="pt">0 GF</div></div>
+      <div class="pod first"><div class="av" style="background:#0b0f1c"></div><div class="rk">1ST</div><div class="nm">—</div><div class="pt">0 GF</div></div>
+      <div class="pod"><div class="av" style="background:#0b0f1c"></div><div class="rk">3RD</div><div class="nm">—</div><div class="pt">0 GF</div></div>
+    </div>
+    <div class="card" style="background:linear-gradient(160deg,#161207,#0b0a06); border-color:#3d2f0e">
+      <div id="lbRows"></div>
+    </div>
+    <div class="ownrank">
+      <div class="av">Y</div>
+      <div class="mid"><b>You</b><span id="ownPts">0 GF Points</span></div>
+      <div class="rk"><b id="ownRank">100+</b><span>YOUR RANK</span></div>
+    </div>
+  </section>
+</div>
+
+<!-- DEPOSIT SUCCESS -->
+<div id="depSuccess" style="display:none; position:fixed; inset:0; z-index:200; background:rgba(4,8,18,.78); align-items:center; justify-content:center">
+  <div class="deps-card">
+    <div id="depParticles"></div>
+    <div class="deps-ring"><svg width="86" height="86" viewBox="0 0 86 86"><defs><linearGradient id="depsGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5c65c"/><stop offset="1" stop-color="#b8860b"/></linearGradient></defs><circle class="deps-circ" cx="43" cy="43" r="39" fill="none" stroke="url(#depsGold)" stroke-width="3.5"/><path class="deps-check" d="M28 44l10 10 20-22" fill="none" stroke="#f5c65c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="deps-title">DEPOSIT SUCCESSFUL</div>
+    <div class="deps-amt" id="depSuccAmt">+$0.00</div>
+    <div class="deps-sub">Your balance has been updated</div>
+    <button class="goldbtn" style="margin-top:16px" onclick="closeDepSuccess()">DONE</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav id="nav"><div class="inner">
+  <div class="navbtn active" data-pg="pg-home" data-i18n="nav_home" onclick="go(this)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M3 11l9-8 9 8v9a2 2 0 01-2 2h-4v-7h-6v7H5a2 2 0 01-2-2z"/></svg>HOME</div>
+  <div class="navbtn" data-pg="pg-chart" data-i18n="nav_chart" onclick="go(this)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>CHART</div>
+  <div class="navbtn" data-pg="pg-wallet" data-i18n="nav_wallet" onclick="go(this)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/></svg>WALLET</div>
+  <div class="navbtn" data-pg="pg-profile" data-i18n="nav_profile" onclick="go(this)"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.4 8-5.4s6.5 1.8 8 5.4"/></svg>PROFILE</div>
+</div></nav>
+
+<script>
+  // splash — tiny bright particles gather and form the GRAMFY name (gold + telegram blue)
+  const splash = document.getElementById('splash');
+  const showApp = () => { splash.classList.add('hide'); document.getElementById('app').classList.add('show'); };
+  setTimeout(showApp, 5200); splash.addEventListener('click', showApp);
+  (function particles(){
+    try {
+      const cv = document.getElementById('splashCv'), cx = cv.getContext('2d');
+      const W = cv.width = splash.clientWidth, H = cv.height = splash.clientHeight;
+      const off = document.createElement('canvas'); off.width = 640; off.height = 170;
+      const oc = off.getContext('2d');
+      oc.font = '800 104px "Segoe UI", Arial, sans-serif'; oc.textAlign = 'center'; oc.textBaseline = 'middle';
+      oc.fillStyle = '#fff'; oc.fillText('GRAMFY', 320, 88);
+      const data = oc.getImageData(0, 0, 640, 170).data, pts = [];
+      for (let y = 0; y < 170; y += 5) for (let x = 0; x < 640; x += 5)
+        if (data[(y * 640 + x) * 4 + 3] > 128) pts.push([x, y]);
+      const scale = Math.min(W * 0.92 / 640, 2.2), ox = (W - 640 * scale) / 2, oy = (H - 170 * scale) / 2 - 14;
+      const fw = document.getElementById('finalWord');
+      const golds = ['#ffe9a8', '#f5c65c', '#ffd76a', '#e8b64c'], blues = ['#37aee2', '#57c8ff', '#8be9ff'];
+      const ps = pts.map(p => { const blue = Math.random() < 0.35;
+        const ang = Math.random() * Math.PI * 2, rad = Math.max(W, H) * (0.35 + Math.random() * 0.45);
+        return { x: W/2 + Math.cos(ang) * rad, y: H/2 + Math.sin(ang) * rad,
+          tx: ox + p[0] * scale, ty: oy + p[1] * scale,
+          c: blue ? blues[(Math.random() * 3) | 0] : golds[(Math.random() * 4) | 0],
+          s: 1.3 + Math.random() * 1.5, d: Math.random() * 26, ph: Math.random() * 6.28 }; });
+      let f = 0; const t0 = performance.now();
+      setTimeout(() => { fw.classList.add('show'); cv.style.opacity = '0'; }, 2600);
+      (function anim(){ f++; cx.clearRect(0, 0, W, H);
+        for (const p of ps) { if (f > p.d) { p.x += (p.tx - p.x) * 0.09; p.y += (p.ty - p.y) * 0.09; }
+          const tw = 0.75 + 0.25 * Math.sin(f * 0.22 + p.ph);
+          cx.globalAlpha = tw; cx.fillStyle = p.c;
+          cx.beginPath(); cx.arc(p.x, p.y, p.s + 0.7, 0, 6.29); cx.fill(); }
+        cx.globalAlpha = 1;
+        if (performance.now() - t0 < 2700) requestAnimationFrame(anim); })();
+    } catch (e) { document.getElementById('fallbackWord').style.display = 'block'; }
+  })();
+
+  // nav
+  function go(el){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(el.dataset.pg).classList.add('active');
+    document.querySelectorAll('.navbtn').forEach(n=>n.classList.remove('active')); el.classList.add('active');
+    window.scrollTo(0,0); }
+  function goPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.navbtn').forEach(n=>n.classList.toggle('active', n.dataset.pg===id));
+    window.scrollTo(0,0); }
+  function goWallet(sub){ goPage('pg-wallet'); showSub(sub); }
+  // LIVE SUPPORT — drag to move, tap to open (Profile page only)
+  function openSupport(){ document.getElementById('supPanel').classList.add('open'); }
+  function closeSupport(){ document.getElementById('supPanel').classList.remove('open'); }
+  function openSupportDm(){ const url = 'https://t.me/GRAMFY_SP';
+    const w = window.Telegram && window.Telegram.WebApp;
+    if (w && w.openTelegramLink) w.openTelegramLink(url); else window.open(url, '_blank'); }
+  (function(){ const fab = document.getElementById('supFab'); if (!fab) return;
+    let sx = 0, sy = 0, ox = 0, oy = 0, moved = false, drag = false;
+    fab.addEventListener('pointerdown', e => { const r = fab.getBoundingClientRect();
+      drag = true; moved = false; sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+      fab.style.left = ox + 'px'; fab.style.top = oy + 'px'; fab.style.right = 'auto'; fab.style.bottom = 'auto';
+      try { fab.setPointerCapture(e.pointerId); } catch (err) {} });
+    fab.addEventListener('pointermove', e => { if (!drag) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (Math.abs(dx) + Math.abs(dy) > 7) moved = true;
+      if (!moved) return;
+      const w = fab.offsetWidth, h = fab.offsetHeight;
+      fab.style.left = Math.max(4, Math.min(window.innerWidth - w - 4, ox + dx)) + 'px';
+      fab.style.top = Math.max(4, Math.min(window.innerHeight - h - 4, oy + dy)) + 'px'; });
+    const end = () => { if (drag && !moved) openSupport(); drag = false; };
+    fab.addEventListener('pointerup', end); fab.addEventListener('pointercancel', () => { drag = false; });
+  })();
+  function showSub(which){ ['main','dep','depusdt','wd'].forEach(k=>document.getElementById('w-'+k).classList.toggle('hidden', k!==which)); window.scrollTo(0,0); }
+  function copyAddrTap(el){ const a=el.textContent.trim(); if (a.indexOf('0x') !== 0) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(a);
+    el.textContent='COPIED'; el.style.borderColor='#12d68a'; el.style.color='#12d68a';
+    setTimeout(()=>{ el.textContent=a; el.style.borderColor=''; el.style.color=''; },1200); }
+  function copyAddr(b){ const a=document.getElementById('depAddr').textContent.trim();
+    if (navigator.clipboard) navigator.clipboard.writeText(a); b.textContent='COPIED'; setTimeout(()=>b.textContent='COPY ADDRESS',1500); }
+  function copyRef(b){ const a=document.getElementById('refLink').textContent.trim();
+    if (navigator.clipboard) navigator.clipboard.writeText(a); b.textContent='COPIED'; setTimeout(()=>b.textContent='COPY INVITE LINK',1500); }
+
+  // Live activity ticker: real platform data only (wiring script).
+
+
+  // market select — test phase ships Gold + USTEC only (owner's
+  // call, 2026-11-09); BTC/ETH join before the live launch.
+  let selMkt = null;
+  const MIN_BY_MKT = { XAUUSD: 10, USTEC: 5, BTCUSD: 10, ETHUSD: 5 };
+  const NAME_BY_MKT = { XAUUSD: 'Gold', USTEC: 'USTEC', BTCUSD: 'BTC', ETHUSD: 'ETH' };
+  function minFor(sym){ return MIN_BY_MKT[sym] || 5; }
+  function selectMkt(sym){ selMkt = sym; sessPoll();
+    ['XAUUSD','USTEC','BTCUSD','ETHUSD'].forEach(k => { const t = document.getElementById('mkt-' + k); if (t) t.classList.toggle('sel', k === sym); });
+    document.getElementById('warnMkt').style.display='none';
+    chartPair = sym;
+    ['XAUUSD','USTEC','BTCUSD','ETHUSD'].forEach(k => { const t = document.getElementById('ptab-' + k); if (t) t.classList.toggle('sel', k === sym); });
+    document.querySelector('#pg-chart .lbl').textContent = sym + ' · M1';
+    loadChart();
+    const lh = document.getElementById('lossHint');
+    if (lh) lh.textContent = 'Minimum for ' + (NAME_BY_MKT[sym] || sym) + ' is $' + minFor(sym) + '. Lot size is automatic — 20% of your max loss is risked per trade.';
+    const lv = parseFloat(loss.value || '0');
+    if (lv && lv < minFor(sym)) loss.value = minFor(sym);
+    syncLossWarn(); }
+
+  // Chart page pair tabs (Step 6): the chart shows one pair at a
+  // time — its price, its sessions, its history.
+  let chartPair = 'XAUUSD';
+  function setChartPair(sym){ chartPair = sym; if (typeof loadHistory === 'function') loadHistory();
+    ['XAUUSD','USTEC','BTCUSD','ETHUSD'].forEach(k => { const t = document.getElementById('ptab-' + k); if (t) t.classList.toggle('sel', k === sym); });
+    document.querySelector('#pg-chart .lbl').textContent = sym + ' · M1';
+    candles = []; price = 0; loadChart(); sessPoll(); loadHistory(); }
+  window.setChartPair = setChartPair;
+
+  // bot session
+  let running = false, sessPl = 0, setLoss = 0, fillAt = 0, stopUnlocked = false,
+      stopBusyTop = false, stopBusyOne = {}, startBusy = false;
+  const btn=document.getElementById('startBtn'), dot=document.getElementById('dot'), st=document.getElementById('statusText'),
+        bt=document.getElementById('btnText'), icon=document.getElementById('btnIcon'), loss=document.getElementById('loss'), warn=document.getElementById('warn'),
+        cbs=document.getElementById('chartBotState'), stopBtn=document.getElementById('stopBtn'), stopNote=document.getElementById('stopNote');
+  function bufferOf(v){ return Math.max(1, v * 0.10); }
+  function setBotUI(){ dot.classList.toggle('on',running);
+    // The button ALWAYS starts another session (owner, 2026-11-09:
+    // one session running on a pair must not block the second —
+    // only the server's per-pair cap of 2 refuses, with its
+    // message). The status line carries the running state instead.
+    st.textContent = running ? 'BOT RUNNING' : 'BOT OFF'; bt.textContent = 'START BOT';
+    btn.classList.toggle('running', window.__pairFull === true);
+    icon.innerHTML = running ? '<path d="M5 5h14v14H5z"/>' : '<path d="M6 3l14 9-14 9z"/>';
+    cbs.textContent = running ? 'RUNNING' : 'OFF'; cbs.style.color = running ? '#12d68a' : '#66788f'; }
+  function endSession(){ /* a pair's session ended — the global flag
+    is recomputed by sessPoll from the live session list */ sessPoll(); loadHistory(); }
+  function syncLossWarn(){ const v=parseFloat(loss.value||'0'), m=minFor(selMkt || 'XAUUSD');
+    if (v && v < m) { warn.textContent='Minimum max loss for ' + (NAME_BY_MKT[selMkt] || 'this market') + ' is $' + m + '.'; warn.style.display='block'; }
+    else warn.style.display='none'; }
+  btn.addEventListener('click', async ()=>{
+    const v=parseFloat(loss.value||'0');
+    if(!selMkt){ document.getElementById('warnMkt').style.display='block'; return; }
+    if(v<minFor(selMkt)){ syncLossWarn(); return; } warn.style.display='none';
+    if (startBusy) return; startBusy = true; // double-tap shield: one START in flight at a time (deep check, 2026-11-11)
+    // REAL start (multi-session): the server checks the per-pair
+    // cap (2) and that the balance covers this max loss ON TOP of
+    // the sessions already running — the same money never backs
+    // two sessions. A failed start shows the server's message.
+    const prev = bt.textContent; bt.textContent='STARTING…';
+    try {
+      await api('/api/bot/start', { method:'POST', body: JSON.stringify({ symbol: selMkt, maxLoss: v }) });
+    } catch(e) {
+      warn.textContent = e.message; warn.style.display='block'; bt.textContent = prev;
+      startBusy = false;
+      return;
+    }
+    startBusy = false;
+    running = true; setBotUI();
+    setChartPair(selMkt);
+    goPage('pg-chart'); sessPoll(); });
+  loss.addEventListener('input', syncLossWarn);
+
+
+  // ── Live session wiring (Step 3) ─────────────────────────────
+  // Polls the server for the REAL session state: live P/L (realized
+  // + floating), open position summary, lot, and whether the
+  // session is still running. When the EA price for the session's
+  // symbol is fresh, it also drives the chart page's price line.
+  const stLot = document.getElementById('stLot');
+  const CONTRACT_AP = { XAUUSD: 100, USTEC: 1, BTCUSD: 1, ETHUSD: 1 };
+  const SLDIST_AP = { XAUUSD: 2, USTEC: 10, BTCUSD: 100, ETHUSD: 10 };
+  let sessSymbol = null, sessWas = false;
+  function fmtPl(v){ return (v >= 0 ? '+' : '-') + '$' + Math.abs(Number(v || 0)).toFixed(2); }
+  // Profile TOTAL PROFIT is LIVE (owner, 2026-11-09): the settled
+  // net total from /me plus the floating P/L summed over ALL his
+  // running sessions (every pair), refreshed by sessPoll — so the
+  // number breathes with the market and lands on the settled total
+  // the moment the last session ends.
+  let profBase = 0;
+  function renderProfProfit(floatSum){
+    const el = document.getElementById('profProfit'); if (!el) return;
+    const v = profBase + Number(floatSum || 0);
+    el.textContent = fmtPl(v);
+    el.style.color = v >= 0 ? '#12d68a' : '#f6465d';
+  }
+  async function sessPoll(){
+    try {
+      // Step 6: poll ALL sessions; the chart shows the pair on the
+      // current tab, with one card per session on that pair.
+      const d = await api('/api/bot/sessions');
+      const list = d.sessions || [];
+      renderProfProfit(list.reduce((sum, x) => sum + Number(x.floatingPnl || 0), 0));
+      const wasRunning = running;
+      running = list.length > 0;
+      if (running !== wasRunning) setBotUI();
+      // A session ended since the last look? Pull the fresh
+      // position-history row NOW (owner, 2026-11-09: a filled $10
+      // session must show exactly -$10 the moment it lands).
+      if (window.__sessIds) {
+        const nowIds = list.map(x => x.id).join(',');
+        if (nowIds !== window.__sessIds && document.getElementById('pg-chart').classList.contains('active')) loadHistory();
+        window.__sessIds = nowIds;
+      } else window.__sessIds = list.map(x => x.id).join(',');
+      window.__pairFull = list.filter(x => x.symbol === selMkt).length >= 2;
+      btn.classList.toggle('running', window.__pairFull);
+      st.textContent = running ? list.length + ' SESSION' + (list.length > 1 ? 'S' : '') + ' RUNNING' : 'BOT OFF';
+      bt.textContent = 'START BOT';
+      // pair tab badges: how many sessions run on each pair
+      ['XAUUSD','USTEC','BTCUSD','ETHUSD'].forEach(k => {
+        const el = document.getElementById('prn-' + k); if (!el) return;
+        const n = list.filter(x => x.symbol === k).length;
+        el.textContent = n ? n + ' RUNNING' : '';
+        // Live dot IN the picker tile too (owner, 2026-11-09): the
+        // running state must be visible before switching charts.
+        const tile = document.getElementById('mkt-' + k);
+        if (tile) {
+          // Running ring (owner, 2026-11-09 20:35): green while ONE
+          // session runs on the pair; the RED ring appears only
+          // when BOTH session slots are full (2 running).
+          tile.classList.toggle('full', n >= 2);
+          tile.style.boxShadow = (n === 1) ? '0 0 0 2px #12d68a inset' : '';
+        }
+      });
+      const mine = list.filter(x => x.symbol === chartPair);
+      const primary = mine[0] || null;
+      if (!primary) {
+        stPl.textContent = '+$0.00'; stPl.style.color = '#12d68a';
+        stPos.textContent = '—'; if (stLot) stLot.textContent = '—';
+        stopBtn.classList.add('locked'); stopBtn.classList.remove('closing');
+        stopBtn.textContent = 'STOP BOT'; stopBusyTop = false;
+      } else {
+        // TOP CARD = ALL sessions on this pair COMBINED (owner,
+        // 2026-11-09): P/L is the sum of every session here, LOT is
+        // the sum of their lots, POSITION counts every open slice.
+        // One session running: the card simply shows that session.
+        const totLive = mine.reduce((a, x) => a + Number(x.livePnl || 0), 0);
+        const totOpen = mine.reduce((a, x) => a + Number(x.openTrades || 0), 0);
+        const lotOf = x => { const r = Math.min(0.20 * x.maxLoss, Math.max(0, x.maxLoss + Math.min(0, x.realizedPnl))); return Math.floor(r / ((SLDIST_AP[x.symbol] || 1) * (CONTRACT_AP[x.symbol] || 1)) * 100) / 100; };
+        const totLot = mine.reduce((a, x) => a + (x.openTrades > 0 ? (Number(x.openLot) || lotOf(x)) : 0), 0); // real slice lots first (server), estimate only as fallback
+        stPl.textContent = fmtPl(totLive);
+        stPl.style.color = totLive >= 0 ? '#12d68a' : '#f6465d';
+        if (totOpen > 0) {
+          stPos.textContent = totOpen + ' OPEN';
+          if (stLot) stLot.textContent = totLot > 0 ? totLot.toFixed(2) : '—';
+        } else {
+          stPos.textContent = 'WATCHING';
+          if (stLot) stLot.textContent = '—';
+        }
+        // The top STOP closes every session on this pair whose own
+        // 30% rule is met; the server re-checks each one and simply
+        // leaves a still-locked session running. It unlocks when ANY
+        // session on the pair can stop. While a stop already sent is
+        // settling on MT5 (real-close, seconds), the button shows
+        // STOPPING and swallows taps (owner, 2026-11-10): repeated
+        // clicks must never look broken.
+        const closingMine = mine.some(x => x.closing);
+        const unlocked = mine.some(x => !x.closing && x.livePnl >= 0.30 * x.maxLoss);
+        // The poll OWNS the busy flag once the outcome is visible
+        // (deep-check fix, 2026-11-10): closing in flight -> keep it;
+        // anything else showing means the tap's result has landed,
+        // so release — otherwise a tap on a session that unlocked
+        // AFTER an earlier stop was swallowed silently for up to
+        // the 45s failsafe.
+        if (closingMine) stopBusyTop = true; else stopBusyTop = false;
+        stopBtn.classList.toggle('closing', closingMine);
+        stopBtn.classList.toggle('locked', !unlocked && !closingMine);
+        const note = document.getElementById('stopNote');
+        if (note) {
+          if (closingMine) { note.textContent = 'Stopping — closing on MT5, the final P/L lands in a few seconds.'; note.classList.remove('hidden'); }
+          else if (unlocked) { note.textContent = 'You can stop the bot now if you want — or let it keep running.'; note.classList.remove('hidden'); }
+          else note.classList.add('hidden');
+        }
+        if (!closingMine) stopBtn.textContent = mine.length > 1 ? 'STOP BOT (' + mine.length + ' SESSIONS)' : 'STOP BOT';
+        // EA price drives the header for pairs without a candle feed.
+        if (primary.bid > 0 && chartPair !== 'XAUUSD' && chartPair !== 'BTCUSD' && chartPair !== 'ETHUSD') {
+          const old = price; price = primary.bid;
+          priceEl.textContent = Number(primary.bid).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          priceEl.className = 'price ' + (price >= old ? 'up' : 'dn');
+        }
+      }
+      // One card per session on this pair (max 2), each with its
+      // own live P/L, SL and STOP state.
+      const box = document.getElementById('sessCards');
+      if (box) {
+        window.__sessMine = mine; // card order = mine order; stopOne uses it for instant tap feedback
+        // TP-area preservation (owner, 2026-11-10): if the user is
+        // typing a TP value and NOTHING about the TP area changed,
+        // leave the cards' HTML entirely alone — a 2s poll must
+        // never wipe a half-typed percent. When the typed focus is
+        // elsewhere (or nothing is typed), re-render normally.
+        const tpSigOf = list => list.map(x => x.id + ':' + (x.tpPercent == null ? '-' : x.tpPercent) + ':' + (x.closing ? 1 : 0)).join('|');
+        const tpSigNow = tpSigOf(mine);
+        const actEl = document.activeElement;
+        const typingTp = !!(actEl && actEl.id && actEl.id.indexOf('tp-') === 0 && box.contains(actEl));
+        if (typingTp && tpSigNow === window.__tpSig) { /* keep the user's keystrokes — skip this render */ }
+        else {
+        window.__tpSig = tpSigNow;
+        box.innerHTML = mine.map((x, i) => {
+          const un = !x.closing && x.livePnl >= 0.30 * x.maxLoss;
+          const risk = Math.min(0.20 * x.maxLoss, Math.max(0, x.maxLoss + Math.min(0, x.realizedPnl)));
+          const lot = Number(x.openLot) || Math.floor(risk / ((SLDIST_AP[x.symbol] || 1) * (CONTRACT_AP[x.symbol] || 1)) * 100) / 100; // real slice lot from the server when the session holds slices
+          const btnCls = x.closing ? 'stopbtn closing' : ('stopbtn' + (un ? '' : ' locked'));
+          const btnTxt = x.closing ? 'STOPPING…' : 'STOP SESSION ' + (i + 1);
+          // Per-session TP control on the card's right side
+          // (owner, 2026-11-10): the input survives the 2s poll
+          // ONLY when nothing in the TP area changed — a value
+          // being typed must never be wiped by a re-render.
+          // While the session is closing, the row is hidden.
+          const tpRow = x.closing ? '' :
+            '<div class="tprow"><span class="tplab">TP · TAKE PROFIT</span><span class="tpwrap">' +
+            (x.tpPercent != null ? '<span class="tpset">' + x.tpPercent + '%</span>' : '') +
+            '<input type="number" id="tp-' + x.id + '" min="30" max="200" step="1" placeholder="%" value="' + (x.tpPercent != null ? x.tpPercent : '') + '">' +
+            '<button class="tpbtn" onclick="setSessTp(\'' + x.id + '\')">SET</button></span></div>' +
+            '<div class="tperr" id="tperr-' + x.id + '"></div>';
+          return '<div class="sesscard" data-sess="' + x.id + '"><div class="stat-grid">' +
+            '<div class="stat"><span>SESSION ' + (i + 1) + ' · SL $' + x.maxLoss + '</span><b style="color:' + (x.livePnl >= 0 ? '#12d68a' : '#f6465d') + '">' + fmtPl(x.livePnl) + '</b></div>' +
+            '<div class="stat"><span>POSITION</span><b>' + (x.openTrades > 0 ? x.openTrades + ' OPEN' : 'WATCHING') + '</b></div>' +
+            '<div class="stat"><span>LOT</span><b>' + (x.openTrades > 0 && lot > 0 ? lot.toFixed(2) : '—') + '</b></div></div>' +
+            tpRow +
+            '<button class="' + btnCls + '" style="margin-top:10px" onclick="stopOne(\'' + x.id + '\')">' + btnTxt + '</button></div>';
+        }).join('');
+        }
+      }
+    } catch (e) { /* poll again next tick — never fake state */ }
+  }
+  // TOP stop = close-all for this pair, exchange-style (owner,
+  // 2026-11-09): the pair's summary card sits above the session
+  // cards and its STOP ends every session whose OWN unlock is on —
+  // one session unlocked: the top button is live and stops just
+  // that one; both unlocked: the same press stops both together.
+  async function tryStopTop(){
+    // ONE tap is enough (owner, 2026-11-10): repeated taps while a
+    // stop is being sent — or while MT5 is still settling it —
+    // used to look like nothing was happening for a long while,
+    // because extra taps reached the server and came back as
+    // silent errors. Now the first tap flips the button to
+    // STOPPING at once, extra taps are swallowed until the poll
+    // shows the settled result, and the server's 'already' answer
+    // counts as DONE. The final P/L itself still comes only from
+    // MT5's real close (a few seconds) — the button never promises
+    // a figure before MT5 gives it.
+    const b = document.getElementById('stopBtn');
+    if (stopBusyTop) return;
+    if (b && (b.classList.contains('locked') || b.classList.contains('closing'))) {
+      if (b.classList.contains('locked')) {
+        const n = document.getElementById('stopNote');
+        if (n) { n.textContent = 'Your session is active. The bot is trading for you — profit and loss update live.'; n.classList.remove('hidden'); }
+      }
+      return; }
+    stopBusyTop = true;
+    if (b) { b.classList.add('closing'); b.classList.remove('locked'); b.textContent = 'STOPPING…'; }
+    const n = document.getElementById('stopNote');
+    if (n) { n.textContent = 'Stopping — closing on MT5, the final P/L lands in a few seconds.'; n.classList.remove('hidden'); }
+    try { await api('/api/bot/stop', { method:'POST', body: JSON.stringify({ symbol: chartPair, all: true }) }); }
+    catch (e) { stopBusyTop = false; }
+    setTimeout(() => { stopBusyTop = false; }, 45000); // failsafe: never wedge the button
+    sessPoll(); loadMe(); }
+  window.tryStopTop = tryStopTop;
+  async function stopOne(id){
+    // Same one-tap contract as the top STOP (owner, 2026-11-10):
+    // a locked card shows the neutral note; an unlocked one sends
+    // once and swallows repeat taps; 'already' counts as DONE.
+    if (stopBusyOne[id]) return;
+    stopBusyOne[id] = true; setTimeout(() => { delete stopBusyOne[id]; }, 45000);
+    // Instant feedback on THIS tap (deep-check fix, 2026-11-10):
+    // the clicked card's own button flips to STOPPING at once —
+    // the next poll re-renders every card from live server state
+    // anyway, so this never has to be undone by hand. (The button
+    // is found before the rebuild because the click happened on
+    // the current render.)
+    try {
+      const cards = document.querySelectorAll('#sessCards .sesscard');
+      const mineNow = (window.__sessMine || []);
+      const idx = mineNow.findIndex(x => x.id === id);
+      if (idx >= 0 && cards[idx]) {
+        const bb = cards[idx].querySelector('button');
+        if (bb) { bb.classList.add('closing'); bb.classList.remove('locked'); bb.textContent = 'STOPPING…'; }
+      }
+    } catch (e) { /* visual only — the stop itself is unaffected */ }
+    try {
+      const r = await api('/api/bot/stop', { method:'POST', body: JSON.stringify({ sessionId: id }) });
+      if (r && r.already && !r.closing) delete stopBusyOne[id]; // finished already — nothing to wait for
+    } catch (e) {
+      delete stopBusyOne[id];
+      const n = document.getElementById('stopNote');
+      if (n) { n.textContent = 'Your session is active. The bot is trading for you — profit and loss update live.'; n.classList.remove('hidden'); }
+      return;
+    }
+    sessPoll(); loadMe();
+  }
+  window.stopOne = stopOne;
+  // Per-session TP set (owner, 2026-11-10): reads the % typed
+  // beside THIS session's card, validates 30..200 in the app too,
+  // and saves it through the server (which enforces the same
+  // range). The server's reply value is what the card shows next.
+  async function setSessTp(id){
+    const inp = document.getElementById('tp-' + id);
+    const err = document.getElementById('tperr-' + id);
+    const showErr = m => { if (err) { err.textContent = m; err.style.display = 'block'; } };
+    if (!inp) return;
+    const v = parseFloat(inp.value || '');
+    if (!v || v < 30 || v > 200) { showErr('TP must be between 30% and 200%.'); return; }
+    if (err) err.style.display = 'none';
+    try {
+      const r = await api('/api/bot/session/tp', { method: 'POST', body: JSON.stringify({ sessionId: id, tpPercent: v }) });
+      inp.value = (r && r.tpPercent != null) ? r.tpPercent : Math.round(v);
+      sessPoll();
+    } catch (e) { showErr(e.message || 'Could not set TP — try again.'); }
+  }
+  window.setSessTp = setSessTp;
+  setInterval(sessPoll, 1000);
+  // Market board: the red closed banner mirrors /api/bot/markets.
+  async function marketsPoll(){
+    try {
+      const d = await api('/api/bot/markets');
+      const b = document.getElementById('closedBanner');
+      if (b && d.markets) {
+        // The banner speaks for the pair on the current chart tab.
+        const m = d.markets[chartPair];
+        b.style.display = (m && !m.open && !d.newsPause) ? 'block' : 'none';
+        const cs = document.getElementById('closedSub');
+        if (cs && m) cs.textContent = (m.name + ' is closed right now.');
+        const nb = document.getElementById('newsBanner');
+        if (nb) nb.style.display = d.newsPause ? 'block' : 'none';
+        // All four tiles ALWAYS show in Home (owner, 2026-11-09
+        // 21:50): BTC/ETH sit beside Gold/USTEC like any market.
+        // Whether a market's BOT may open rides in markets[s].botOpen
+        // and is enforced by the server at START — display and
+        // tradability are separate things.
+      }
+    } catch (e) {}
+  }
+  setInterval(marketsPoll, 30000);
+  // Notifications (owner, 2026-11-09): the bell badge polls the
+  // unread count; opening the page renders the list and marks all
+  // read, Mushti-style.
+  function nEsc(x){ return String(x == null ? '' : x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  async function notifPoll(){
+    try {
+      const d = await api('/api/notifications');
+      const b = document.getElementById('bellBadge');
+      if (b) { b.textContent = d.unread; b.style.display = d.unread > 0 ? 'flex' : 'none'; }
+    } catch (e) {}
+  }
+  window.openNotifs = function(){ goPage('pg-notif'); };
+  window.loadNotifs = async function(){
+    const box = document.getElementById('notifList');
+    try {
+      const d = await api('/api/notifications');
+      if (!d.list.length) { box.innerHTML = '<div class="hint">No notifications yet.</div>'; }
+      else box.innerHTML = d.list.map(n =>
+        '<div class="nrow' + (n.read ? '' : ' unread') + '"><div class="nt">' + nEsc(n.title) + '</div>' +
+        (n.text ? '<div class="nx">' + nEsc(n.text) + '</div>' : '') +
+        '<div class="na">' + new Date(n.at).toLocaleString() + '</div></div>').join('');
+      await api('/api/notifications/read', { method: 'POST' });
+      const b = document.getElementById('bellBadge');
+      if (b) b.style.display = 'none';
+    } catch (e) { box.innerHTML = '<div class="hint">Could not load notifications.</div>'; }
+  };
+  notifPoll();
+  setInterval(notifPoll, 20000);
+  // Position history list at the bottom of the Chart page.
+  async function loadHistory(){
+    try {
+      const d = await api('/api/bot/history?symbol=' + chartPair);
+      const list = document.getElementById('histList'), empty = document.getElementById('histEmpty');
+      if (!list) return;
+      list.innerHTML = '';
+      const rows = d.history || [];
+      if (empty) empty.style.display = rows.length ? 'none' : 'block';
+      const ICON = { XAUUSD: 'AU', USTEC: 'US', BTCUSD: 'BT', ETHUSD: 'ET' }; // (full re-check 2026-11-09: the gold coin moved to the coin style below — no letter clash possible)
+      rows.forEach(h => {
+        const st = new Date(h.startedAt), en = h.stoppedAt ? new Date(h.stoppedAt) : null;
+        let dur = '';
+        if (en && !isNaN(st)) { const m = Math.max(0, Math.round((en - st) / 60000)); dur = m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm'; }
+        const dt = isNaN(st) ? '' : st.toLocaleDateString('en-GB') + ' ' + st.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        const row = document.createElement('div'); row.className = 'tx';
+        row.innerHTML = '<div class="ic" style="width:38px; height:38px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; color:#241a02; background:radial-gradient(circle at 35% 30%,#F6EBC0,#C79A35 60%,#9A741F)">' + (ICON[h.symbol] || 'GF') + '</div>' +
+          '<div class="tx-main"><b>' + h.symbol + '</b><span>' + dt + (dur ? ' · ' + dur : '') + ' · ' + h.trades + ' trades' + '</span></div>' +
+          '<div class="tx-amt ' + (h.pnl >= 0 ? 'plus' : 'minus') + '">' + fmtPl(h.pnl) + '</div>';
+        list.appendChild(row);
+      });
+    } catch (e) {}
+  }
+  window.loadHistory = loadHistory;
+
+  // REAL gold chart — live PAXG/USDT candles from Binance public data
+  // (PAXG tracks the gold price). No fake candles and no fake P/L:
+  // Session P/L stays $0.00 until the trading engine reports real trades.
+  const cv=document.getElementById('cv'), ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  let price=0, candles=[];
+  function draw(){ if(!candles.length){ ctx.clearRect(0,0,W,H); return; }
+    const all=candles.flatMap(c=>[c.h,c.l]); let mx=Math.max(...all), mn=Math.min(...all); const pad=(mx-mn)*0.15||1; mx+=pad; mn-=pad;
+    const X=v=>H-((v-mn)/(mx-mn))*H; ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(90,120,170,.13)'; ctx.lineWidth=1;
+    for(let i=1;i<5;i++){ const y=H/5*i; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    const cw=W/candles.length;
+    candles.forEach((c,i)=>{ const up=c.c>=c.o, col=up?'#12d68a':'#f6465d', x=i*cw+cw/2;
+      ctx.strokeStyle=col; ctx.beginPath(); ctx.moveTo(x,X(c.h)); ctx.lineTo(x,X(c.l)); ctx.stroke();
+      ctx.fillStyle=col; const y1=X(Math.max(c.o,c.c)), y2=X(Math.min(c.o,c.c)); ctx.fillRect(x-cw*0.32,y1,cw*0.64,Math.max(1.5,y2-y1)); });
+    ctx.strokeStyle='rgba(245,198,92,.65)'; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(0,X(price)); ctx.lineTo(W,X(price)); ctx.stroke(); ctx.setLineDash([]); }
+  const priceEl=document.getElementById('priceEl'), stPl=document.getElementById('stPl'), stPos=document.getElementById('stPos');
+  // Per-pair candle feeds: Gold from PAXG, BTC/ETH from Binance
+  // spot (all free public data). USTEC has no public feed — its
+  // live price comes from the trading engine via sessPoll.
+  const FEED = { XAUUSD: 'PAXGUSDT', BTCUSD: 'BTCUSDT', ETHUSD: 'ETHUSDT' };
+  async function loadChart(){
+    const note=document.getElementById('chartNote');
+    const feed = FEED[chartPair];
+    if (!feed) {
+      candles=[]; draw();
+      if (note) note.style.display='block';
+      return; }
+    if (note) note.style.display='none';
+    try {
+      const r = await fetch('https://api.binance.com/api/v3/klines?symbol=' + feed + '&interval=1m&limit=34');
+      const k = await r.json();
+      if (!Array.isArray(k) || !k.length) return;
+      candles = k.map(x => ({ o:+x[1], h:+x[2], l:+x[3], c:+x[4] }));
+      const old=price; price=candles[candles.length-1].c;
+      priceEl.textContent='$'+price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      priceEl.className='price '+(price>=old?'up':'dn');
+      draw();
+    } catch (e) { /* feed unreachable — chart stays empty, never faked */ }
+  }
+  setInterval(()=>{ const pg=document.getElementById('pg-chart'); if (pg && pg.classList.contains('active')) loadChart(); }, 15000);
+  draw();
+
+  function toggleAuth(){ if (typeof openAuthPage === 'function') openAuthPage(); }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ===== GRAMFY real API wiring ===== */
+const API = '';
+let gfToken = localStorage.getItem('gf_token') || '';
+let gfUser = null;
+async function api(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  if (gfToken) opts.headers['Authorization'] = 'Bearer ' + gfToken;
+  const r = await fetch(API + path, opts);
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+  return d;
+}
+function fmt(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fillUser(u) {
+  if (!u) return; gfUser = u;
+  watchDeposit(u);
+  document.querySelectorAll('.balance').forEach(el => { el.innerHTML = fmt(u.balance) + ' <small>USDT</small>'; });
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  set('homeId', 'ID: ' + u.userId); set('profId', 'ID: ' + u.userId);
+  set('profName', u.firstName || 'User');
+  set('profUser', (u.username ? '@' + u.username : '') + ' · via Telegram');
+  profBase = Number(u.totalProfit || 0); renderProfProfit(0);
+  set('statDep', fmt(u.totalDeposit)); set('statWd', fmt(u.totalWithdraw));
+  set('refCount', String(u.referralCount || 0)); set('refEarn', fmt(u.referEarnings));
+  const rl = document.getElementById('refLink'); if (rl) rl.textContent = 'https://t.me/GRAMFY_TRADINGBOT?startapp=' + u.userId;
+  // Referral tier — real, from the referral count.
+  const tiers = [[100, 5], [200, 10], [300, 12], [500, 15], [1000, 20]];
+  const rc = Number(u.referralCount || 0);
+  let curPct = 0, curIdx = -1, nextT = null;
+  tiers.forEach((t, i) => { if (rc >= t[0]) { curPct = t[1]; curIdx = i; } else if (!nextT) nextT = t; });
+  const th = document.getElementById('tierHint');
+  if (th) th.innerHTML = 'Your tier: <b style="color:#ffe9a8">' + curPct + '%</b> of referrals\' profit' + (nextT ? ' · Next tier ' + nextT[1] + '% at ' + nextT[0] + ' referrals' : ' · Top tier');
+  const tb2 = document.getElementById('tierBar');
+  if (tb2) tb2.style.width = (nextT ? Math.min(100, Math.round(rc / nextT[0] * 100)) : 100) + '%';
+  document.querySelectorAll('.invite .tier').forEach((el, i) => el.classList.toggle('cur', i === curIdx));
+  wdPreviewUpdate();
+  const pic = avatarUrl(u);
+  paintAv(document.getElementById('profAvatar'), pic);
+  const ownMid = document.querySelector('.ownrank .mid b'); if (ownMid) ownMid.textContent = u.firstName || 'You';
+  const op2 = document.getElementById('ownPts'); if (op2) op2.textContent = Number(u.gfPoints || 0).toLocaleString() + ' GF Points';
+  paintAv(document.querySelector('.ownrank .av'), pic);
+  const gate = document.getElementById('wdGate'), form = document.getElementById('wdForm');
+  if (gate && form) { if (u.totpEnabled) { gate.classList.add('hidden'); form.classList.remove('hidden'); } else { gate.classList.remove('hidden'); form.classList.add('hidden'); } }
+  // Withdraw screen stats: while a session runs, its full max-loss
+  // amount is locked — only the rest is withdrawable (server rule).
+  const wb = document.getElementById('wdBal'), wl = document.getElementById('wdLocked'), wa = document.getElementById('wdAvail');
+  if (wb) wb.textContent = fmt(u.balance);
+  if (wl) wl.textContent = fmt(u.locked || 0);
+  if (wa) wa.textContent = fmt(u.availableBalance != null ? u.availableBalance : u.balance);
+  const ab = document.getElementById('authBtn');
+  if (ab) { ab.textContent = u.totpEnabled ? 'ENABLED' : 'ADD'; ab.style.opacity = u.totpEnabled ? '.55' : '1'; }
+  // Bot state is the server's truth — sync the home controls to it.
+  if (typeof running !== 'undefined' && typeof setBotUI === 'function') {
+    if (!!u.botRunning !== running) { running = !!u.botRunning; setBotUI(); }
+    if (u.botRunning && u.botMaxLoss) { const l = document.getElementById('loss'); if (l && document.activeElement !== l) l.value = u.botMaxLoss; } // never clobber an amount the user is typing (deep check, 2026-11-11)
+  }
+}
+async function loadMe() { try { const d = await api('/api/wallet/me'); fillUser(d.user); } catch (e) {} }
+async function loadWallet() {
+  try { const d = await api('/api/wallet/deposit-address'); const a = document.getElementById('depAddr'); if (a) a.textContent = d.address; renderDepQr(d.address); } catch (e) { const a = document.getElementById('depAddr'); if (a && a.textContent.indexOf('Loading') === 0) a.textContent = 'Address could not load — reopen the app.'; }
+  try {
+    const d = await api('/api/wallet/transactions');
+    let box = document.getElementById('txList');
+    if (!box) {
+      box = document.createElement('div'); box.className = 'card'; box.id = 'txList';
+      box.innerHTML = '<div class="lbl">Transaction History</div>';
+      document.getElementById('w-main').appendChild(box);
+    }
+    box.querySelectorAll('.txrow').forEach(x => x.remove());
+    if (!d.transactions.length) { const p = document.createElement('div'); p.className = 'hint txrow'; p.textContent = 'No transactions yet.'; box.appendChild(p); }
+    d.transactions.forEach(t => {
+      const row = document.createElement('div'); row.className = 'txrow';
+      row.style.cssText = 'display:flex; justify-content:space-between; padding:9px 0; border-top:1px solid rgba(255,255,255,.06)';
+      const dt = new Date(t.createdAt).toLocaleDateString('en-GB');
+      const nm = document.createElement('span'); nm.style.cssText = 'text-transform:capitalize'; nm.textContent = t.type;
+      const sm = document.createElement('small'); sm.style.opacity = '.55'; sm.textContent = ' ' + dt + ' · ' + t.status; nm.appendChild(sm);
+      const bb = document.createElement('b'); bb.textContent = (t.type === 'withdraw' || t.type === 'fee' || t.type === 'loss' ? '-' : '+') + fmt(t.amount);
+      row.appendChild(nm); row.appendChild(bb);
+      box.appendChild(row);
+    });
+  } catch (e) {}
+}
+async function loadBoard() {
+  try {
+    const d = await api('/api/wallet/leaderboard');
+    const pr = document.getElementById('profRank'); if (pr && d.me) pr.textContent = d.me.rank <= 100 ? '#' + d.me.rank : '100+';
+    const op = document.getElementById('ownPts'); if (op && d.me) op.textContent = Number(d.me.gfPoints).toLocaleString() + ' GF Points';
+    const ork = document.getElementById('ownRank'); if (ork && d.me) ork.textContent = d.me.rank <= 100 ? '#' + d.me.rank : '100+';
+    const rows = document.getElementById('lbRows'); if (!rows) return;
+    const pods = document.querySelectorAll('.pod');
+    const order = [1, 0, 2];
+    order.forEach((srcI, i) => { const p = d.top[srcI], el = pods[i]; if (!el) return;
+      if (!p) { el.querySelector('.nm').textContent = '—'; el.querySelector('.pt').textContent = '0 GF'; paintAv(el.querySelector('.av'), ''); return; }
+      el.querySelector('.nm').textContent = p.firstName || p.username || 'User';
+      el.querySelector('.pt').textContent = Number(p.gfPoints).toLocaleString() + ' GF';
+      paintAv(el.querySelector('.av'), p.photoUrl || ''); });
+    rows.innerHTML = '';
+    d.top.slice(3, 20).forEach((p, i) => {
+      const r = document.createElement('div'); r.className = 'lbrow';
+      // Styled classes only (audit fix, 2026-11-09): the row was
+      // built with lbrk/lbav/lbnm/lbpt, which have no CSS — ranks
+      // 4-20 rendered with an invisible avatar. The stylesheet's
+      // .lbrow children are .no/.av/.nm/.pt.
+      r.innerHTML = '<span class="no">' + (i + 4) + '</span><span class="av"></span><span class="nm"></span><b class="pt">' + Number(p.gfPoints).toLocaleString() + ' GF</b>';
+      r.querySelector('.nm').textContent = p.firstName || p.username || 'User'; // names are user-controlled text — never innerHTML (full re-check, 2026-11-09)
+      paintAv(r.querySelector('.av'), p.photoUrl || '');
+      rows.appendChild(r);
+    });
+  } catch (e) {}
+}
+/* Deposit address QR */
+function renderDepQr(addr) {
+  const el = document.getElementById('depQr');
+  if (!el || !addr) return;
+  el.innerHTML = '<div class="qrbox"></div>';
+  if (window.QRCode) { try { new QRCode(el.firstChild, { text: addr, width: 200, height: 200, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {} }
+}
+/* Withdraw fee preview — mirrors the server: fee = 30% of the profit part only */
+function wdPreviewUpdate() {
+  const pv = document.getElementById('wdPreview'); if (!pv) return;
+  const amtEl = document.getElementById('wdAmt');
+  const amount = amtEl ? Number(amtEl.value) || 0 : 0;
+  if (!gfUser || amount <= 0) { pv.textContent = 'Minimum withdraw $20 · Fee: 30% of profit · No profit in it? Fee is $1.'; return; }
+  if (amount < 20) { pv.innerHTML = '<span style="color:#f6465d; font-weight:700">Minimum withdraw is $20.</span>'; return; }
+  const avail = gfUser.availableBalance != null ? Number(gfUser.availableBalance) : Number(gfUser.balance || 0);
+  if (amount > avail) { pv.innerHTML = '<span style="color:#f6465d; font-weight:700">Not enough balance.</span>'; return; }
+  const profitPart = Math.min(amount, Math.max(0, Number(gfUser.profitBalance || 0)));
+  const fee = profitPart > 0 ? Math.round(profitPart * 0.30 * 100) / 100 : 1;
+  pv.innerHTML = 'Fee ' + fmt(fee) + ' · <b style="color:#12d68a">You receive ' + fmt(Math.round((amount - fee) * 100) / 100) + '</b>';
+}
+/* Real withdraw: instant checks with clear messages.
+   Wrong code -> "Wrong code". Too much -> "Not enough balance".
+   All good -> NO warning at all, only the green success line. */
+async function reqWithdraw() {
+  const address = document.getElementById('wdAddr').value.trim();
+  const amount = Number(document.getElementById('wdAmt').value);
+  const code = document.getElementById('wdCode').value.trim();
+  const warn = document.getElementById('wdWarn'), ok = document.getElementById('wdOk');
+  ok.classList.add('hidden');
+  const fail = (t) => { warn.textContent = t; warn.classList.remove('hidden'); };
+  if (!address || address.indexOf('0x') !== 0 || address.length !== 42) return fail('Invalid wallet address');
+  if (!amount || amount <= 0) return fail('Enter an amount');
+  if (amount < 20) return fail('Minimum withdraw is $20');
+  const availNow = gfUser ? (gfUser.availableBalance != null ? Number(gfUser.availableBalance) : Number(gfUser.balance || 0)) : 0;
+  if (gfUser && amount > availNow) return fail('Not enough balance');
+  if (code.length !== 6) return fail('Wrong code');
+  warn.textContent = 'Sending request\u2026'; warn.classList.remove('hidden');
+  try {
+    const d = await api('/api/wallet/withdraw', { method: 'POST', body: JSON.stringify({ address, amount, code }) });
+    warn.classList.add('hidden');
+    ok.textContent = 'Withdraw requested \u2014 Fee ' + fmt(d.fee) + ' \u00b7 You receive ' + fmt(d.net) + '. Fast & secure payout in process.';
+    ok.classList.remove('hidden');
+    document.getElementById('wdAmt').value = ''; document.getElementById('wdCode').value = '';
+    wdPreviewUpdate(); loadMe(); loadWallet();
+  } catch (e) {
+    let t = e.message || 'Something went wrong';
+    if (/code/i.test(t)) t = 'Wrong code';
+    else if (/insufficient|not enough/i.test(t)) t = 'Not enough balance';
+    else if (/already processing/i.test(t)) t = 'A withdraw is already processing';
+    fail(t);
+  }
+}
+/* Authenticator: ADD opens the dedicated pg-auth page */
+async function openAuthPage() {
+  goPage('pg-auth');
+  const on = !!(gfUser && gfUser.totpEnabled);
+  document.getElementById('authSetupCard').classList.toggle('hidden', on);
+  document.getElementById('authOnCard').classList.toggle('hidden', !on);
+  if (on) return;
+  const msg = document.getElementById('authMsg'); msg.classList.add('hidden');
+  try {
+    const d = await api('/api/wallet/totp/setup', { method: 'POST', body: '{}' });
+    document.getElementById('authKey').textContent = d.secret;
+    const q = document.getElementById('authQr'); q.innerHTML = '';
+    try { new QRCode(q, { text: d.otpauthUrl, width: 148, height: 148, colorDark: '#000000', colorLight: '#ffffff' }); }
+    catch (e) { q.innerHTML = '<div style="color:#333; font-size:12px; padding:10px">QR could not load &#8212; use the key below.</div>'; }
+  } catch (e) { msg.classList.remove('hidden'); msg.textContent = e.message; }
+}
+async function enableAuth() {
+  const msg = document.getElementById('authMsg'); msg.classList.remove('hidden'); msg.textContent = 'Checking\u2026';
+  try {
+    await api('/api/wallet/totp/enable', { method: 'POST', body: JSON.stringify({ code: document.getElementById('authCode').value.trim() }) });
+    await loadMe();
+    goPage('pg-profile');
+  } catch (e) { msg.textContent = e.message; }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const ab = document.getElementById('authBtn');
+  if (ab) ab.onclick = () => { openAuthPage(); };
+  const wa = document.getElementById('wdAmt'); if (wa) wa.addEventListener('input', wdPreviewUpdate);
+  ['wdAddr', 'wdAmt', 'wdCode'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { document.getElementById('wdWarn').classList.add('hidden'); document.getElementById('wdOk').classList.add('hidden'); }); });
+  const lr = document.getElementById('lbRows'); if (lr) lr.innerHTML = '';
+  loadActivity();
+  const _goPage = window.goPage;
+  const _go = window.go;
+  window.go = function (el) { _go(el); const id = el && el.dataset ? el.dataset.pg : ''; if (id === 'pg-wallet') { loadWallet(); loadMe(); } if (id === 'pg-board') loadBoard(); if (id === 'pg-notif') loadNotifs(); if (id === 'pg-chart') { if (typeof loadChart === 'function') loadChart(); if (typeof sessPoll === 'function') sessPoll(); if (typeof marketsPoll === 'function') marketsPoll(); if (typeof loadHistory === 'function') loadHistory(); } };
+  window.goPage = function (id) { _goPage(id); if (id === 'pg-wallet') { loadWallet(); loadMe(); } if (id === 'pg-board') loadBoard(); if (id === 'pg-notif') loadNotifs(); if (id === 'pg-chart') { if (typeof loadChart === 'function') loadChart(); if (typeof sessPoll === 'function') sessPoll(); if (typeof marketsPoll === 'function') marketsPoll(); if (typeof loadHistory === 'function') loadHistory(); } };
+});
+/* ===== Deposit success — premium celebration on a REAL credit ===== */
+let depBaseline = null;
+function watchDeposit(u) {
+  const td = Number(u.totalDeposit || 0);
+  if (depBaseline === null) { depBaseline = td; return; }
+  if (td > depBaseline) { const amt = Math.round((td - depBaseline) * 100) / 100; depBaseline = td; showDepSuccess(amt); }
+  else depBaseline = td;
+}
+function showDepSuccess(amount) {
+  const ov = document.getElementById('depSuccess'); if (!ov) return;
+  document.getElementById('depSuccAmt').textContent = '+' + fmt(amount);
+  ov.classList.remove('open'); void ov.offsetWidth;
+  ov.style.display = 'flex'; ov.classList.add('open');
+  const host = document.getElementById('depParticles'); host.innerHTML = '';
+  const colors = ['#f5c65c', '#ffe9a8', '#37aee2', '#fff3c4'];
+  for (let i = 0; i < 26; i++) {
+    const pt = document.createElement('i'); pt.className = 'dep-particle';
+    const sz = 4 + Math.random() * 6;
+    pt.style.cssText = 'left:' + (Math.random() * 100) + '%; width:' + sz + 'px; height:' + sz + 'px; background:' + colors[i % 4] + '; animation-duration:' + (1.1 + Math.random() * 1.3) + 's; animation-delay:' + (Math.random() * 0.35) + 's';
+    host.appendChild(pt);
+  }
+  clearTimeout(window._depSuccT);
+  window._depSuccT = setTimeout(closeDepSuccess, 6000);
+}
+function closeDepSuccess() { const ov = document.getElementById('depSuccess'); if (ov) { ov.classList.remove('open'); ov.style.display = 'none'; } }
+setInterval(() => { if (gfToken) loadMe(); }, 20000);
+
+/* ===== Live activity — demo seed + real events, blended =====
+   The user's rule: the demo seed runs first; as REAL events arrive
+   they mix in, and the demo share shrinks on its own until the feed
+   is fully real (5+ real events = no demo left). */
+const demoActs = (() => {
+  const names = ['Stefan', 'Rahim', 'Karim', 'Arif', 'Tanvir', 'Sakib', 'Mehedi', 'Rony', 'Imran', 'Fahim', 'Nabil', 'Shakib', 'Rakib', 'Hasan', 'Jubayer', 'Sabbir', 'Anik', 'Rafi', 'Tamim', 'Liton', 'Mizan', 'Sohel', 'Ripon', 'Ashik', 'Rubel', 'Naim', 'Emon', 'Shanto', 'Parvez', 'Zahid', 'Milon', 'Kawsar', 'Faisal', 'Biplob', 'Sumon', 'Tarek', 'Omar', 'Yasin', 'Nasim', 'Alamin'];
+  const kinds = ['deposit', 'withdraw', 'profit'];
+  return names.map(n => {
+    const type = kinds[Math.floor(Math.random() * 3)];
+    const amount = type === 'profit' ? 500 + Math.floor(Math.random() * 2500) : 50 + Math.floor(Math.random() * 451);
+    return { name: n, type, amount };
+  });
+})();
+let realActs = [], rai = 0;
+function tickerPool() {
+  if (!realActs.length) return demoActs;
+  const demoCount = Math.max(0, 10 - realActs.length * 2); // real বাড়লে demo নিজে নিজে কমে
+  if (!demoCount) return realActs;
+  const pool = []; let di = 0;
+  const demos = demoActs.slice(0, demoCount);
+  realActs.forEach(a => { pool.push(a); if (di < demos.length) pool.push(demos[di++]); });
+  while (di < demos.length) pool.push(demos[di++]);
+  return pool;
+}
+async function loadActivity() {
+  try { const d = await api('/api/wallet/activity'); realActs = d.activity || []; } catch (e) {}
+  const box = document.getElementById('tickerBox');
+  if (box) box.style.display = tickerPool().length >= 2 ? '' : 'none';
+  rotateActivity();
+}
+function rotateActivity() {
+  const pool = tickerPool();
+  const tt = document.getElementById('tickText'), td = document.getElementById('tickDot');
+  if (!tt || !pool.length) return;
+  const a = pool[rai++ % pool.length];
+  const label = a.type === 'deposit' ? 'deposited' : a.type === 'withdraw' ? 'withdrew' : 'profit';
+  const col = a.type === 'deposit' ? '#12d68a' : a.type === 'withdraw' ? '#f6465d' : '#f5c65c';
+  tt.style.opacity = 0;
+  setTimeout(() => { tt.innerHTML = '<b>' + a.name + '</b> ' + label + ' <b>$' + Number(a.amount).toLocaleString() + '</b>'; if (td) td.style.background = col; tt.style.opacity = 1; }, 350);
+}
+setInterval(rotateActivity, 4200);
+setInterval(loadActivity, 60000);
+
+/* ===== Profile picture: Telegram photo only — no pic = blank (dark) ===== */
+function avatarUrl(u) { if (!u) return ''; return u.photoUrl || ''; }
+function paintAv(el, pic) {
+  if (!el) return;
+  if (pic) { el.style.background = ''; el.style.backgroundImage = 'url(' + pic + ')'; el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center'; el.textContent = ''; }
+  else { el.style.backgroundImage = 'none'; el.style.background = '#0b0f1c'; el.textContent = ''; }
+}
+
+/* ===== Language — core UI labels in 12 languages ===== */
+const I18N = {
+  en: { nav_home: 'HOME', nav_chart: 'CHART', nav_wallet: 'WALLET', nav_profile: 'PROFILE', deposit: 'DEPOSIT', withdraw: 'WITHDRAW', request_withdraw: 'REQUEST WITHDRAW', back_wallet: '\u8592 Back to Wallet', profile: 'PROFILE', leaderboard: 'Leaderboard', telegram_login: 'Telegram Login', authenticator: 'Authenticator (2FA)', language: 'Language', invite_friends: 'INVITE FRIENDS', rules: 'Rules' },
+  bn: { nav_home: 'হোম', nav_chart: 'চার্ট', nav_wallet: 'ওয়ালেট', nav_profile: 'প্রোফাইল', deposit: 'ডিপোজিট', withdraw: 'উত্তোলন', request_withdraw: 'উত্তোলনের অনুরোধ', back_wallet: '\u8592 ওয়ালেটে ফিরুন', profile: 'প্রোফাইল', leaderboard: 'লিডারবোর্ড', telegram_login: 'টেলিগ্রাম লগইন', authenticator: 'অথেনটিকেটর (2FA)', language: 'ভাষা', invite_friends: 'বন্ধুদের আমন্ত্রণ করুন', rules: 'নিয়মাবলী' },
+  hi: { nav_home: 'होम', nav_chart: 'चार्ट', nav_wallet: 'वॉलेट', nav_profile: 'प्रोफ़ाइल', deposit: 'जमा', withdraw: 'निकासी', request_withdraw: 'निकासी का अनुरोध', back_wallet: '\u8592 वॉलेट पर वापस', profile: 'प्रोफ़ाइल', leaderboard: 'लीडरबोर्ड', telegram_login: 'टेलीग्राम लॉगिन', authenticator: 'ऑथेंटिकेटर (2FA)', language: 'भाषा', invite_friends: 'दोस्तों को आमंत्रित करें', rules: 'नियम' },
+  ru: { nav_home: 'ГЛАВНАЯ', nav_chart: 'ГРАФИК', nav_wallet: 'КОШЕЛЁК', nav_profile: 'ПРОФИЛЬ', deposit: 'ДЕПОЗИТ', withdraw: 'ВЫВЕСТИ', request_withdraw: 'ЗАПРОСИТЬ ВЫВОД', back_wallet: '\u8592 Назад в кошелёк', profile: 'ПРОФИЛЬ', leaderboard: 'Лидеры', telegram_login: 'Вход через Telegram', authenticator: 'Аутентификатор (2FA)', language: 'Язык', invite_friends: 'ПРИГЛАСИТЬ ДРУЗЕЙ', rules: 'Правила' },
+  uk: { nav_home: 'ГОЛОВНА', nav_chart: 'ГРАФІК', nav_wallet: 'ГАМАНЕЦЬ', nav_profile: 'ПРОФІЛЬ', deposit: 'ДЕПОЗИТ', withdraw: 'ВИВЕСТИ', request_withdraw: 'ЗАПИТАТИ ВИВЕДЕННЯ', back_wallet: '\u8592 Назад до гаманця', profile: 'ПРОФІЛЬ', leaderboard: 'Лідери', telegram_login: 'Вхід через Telegram', authenticator: 'Автентифікатор (2FA)', language: 'Мова', invite_friends: 'ЗАПРОСИТИ ДРУЗІВ', rules: 'Правила' },
+  es: { nav_home: 'INICIO', nav_chart: 'GRÁFICO', nav_wallet: 'CARTERA', nav_profile: 'PERFIL', deposit: 'DEPOSITAR', withdraw: 'RETIRAR', request_withdraw: 'SOLICITAR RETIRO', back_wallet: '\u8592 Volver a la cartera', profile: 'PERFIL', leaderboard: 'Clasificación', telegram_login: 'Acceso con Telegram', authenticator: 'Autenticador (2FA)', language: 'Idioma', invite_friends: 'INVITAR AMIGOS', rules: 'Reglas' },
+  pt: { nav_home: 'INÍCIO', nav_chart: 'GRÁFICO', nav_wallet: 'CARTEIRA', nav_profile: 'PERFIL', deposit: 'DEPOSITAR', withdraw: 'SACAR', request_withdraw: 'SOLICITAR SAQUE', back_wallet: '\u8592 Voltar à carteira', profile: 'PERFIL', leaderboard: 'Ranking', telegram_login: 'Login com Telegram', authenticator: 'Autenticador (2FA)', language: 'Idioma', invite_friends: 'CONVIDAR AMIGOS', rules: 'Regras' },
+  tr: { nav_home: 'ANA SAYFA', nav_chart: 'GRAFİK', nav_wallet: 'CÜZDAN', nav_profile: 'PROFİL', deposit: 'PARA YATIR', withdraw: 'PARA ÇEK', request_withdraw: 'ÇEKİM TALEBİ', back_wallet: '\u8592 Cüzdana dön', profile: 'PROFİL', leaderboard: 'Liderlik', telegram_login: 'Telegram Girişi', authenticator: 'Kimlik Doğrulayıcı (2FA)', language: 'Dil', invite_friends: 'ARKADAŞLARINI DAVET ET', rules: 'Kurallar' },
+  ar: { nav_home: 'الرئيسية', nav_chart: 'الرسم البياني', nav_wallet: 'المحفظة', nav_profile: 'الملف الشخصي', deposit: 'إيداع', withdraw: 'سحب', request_withdraw: 'طلب السحب', back_wallet: '\u8592 العودة إلى المحفظة', profile: 'الملف الشخصي', leaderboard: 'المتصدرون', telegram_login: 'تسجيل دخول تيليجرام', authenticator: 'المصادقة (2FA)', language: 'اللغة', invite_friends: 'دعوة الأصدقاء', rules: 'القواعد' },
+  id: { nav_home: 'BERANDA', nav_chart: 'GRAFIK', nav_wallet: 'DOMPET', nav_profile: 'PROFIL', deposit: 'DEPOSIT', withdraw: 'TARIK', request_withdraw: 'MINTA PENARIKAN', back_wallet: '\u8592 Kembali ke dompet', profile: 'PROFIL', leaderboard: 'Papan Peringkat', telegram_login: 'Login Telegram', authenticator: 'Autentikator (2FA)', language: 'Bahasa', invite_friends: 'UNDANG TEMAN', rules: 'Aturan' },
+  vi: { nav_home: 'TRANG CHỦ', nav_chart: 'BIỂU ĐỒ', nav_wallet: 'VÍ', nav_profile: 'HỒ SƠ', deposit: 'NẠP TIỀN', withdraw: 'RÚT TIỀN', request_withdraw: 'YÊU CẦU RÚT', back_wallet: '\u8592 Quay lại ví', profile: 'HỒ SƠ', leaderboard: 'Bảng xếp hạng', telegram_login: 'Đăng nhập Telegram', authenticator: 'Xác thực (2FA)', language: 'Ngôn ngữ', invite_friends: 'MỜI BẠN BÈ', rules: 'Quy tắc' },
+  ur: { nav_home: 'ہوم', nav_chart: 'چارٹ', nav_wallet: 'بٹوا', nav_profile: 'پروفائل', deposit: 'جمع کریں', withdraw: 'نکالیں', request_withdraw: 'رقم نکلوانے کی درخواست', back_wallet: '\u8592 بٹوے پر واپس', profile: 'پروفائل', leaderboard: 'لیڈر بورڈ', telegram_login: 'ٹیلیگرام لاگ ان', authenticator: 'تصدیق (2FA)', language: 'زبان', invite_friends: 'دوستوں کو دعوت دیں', rules: 'قواعد' }
+};
+function setI18nText(el, txt) {
+  let done = false;
+  el.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) { n.textContent = txt; done = true; } });
+  if (!done) el.textContent = txt;
+}
+function setLang(code) {
+  if (!I18N[code]) code = 'en';
+  try { localStorage.setItem('gf_lang', code); } catch (e) {}
+  const d = I18N[code], en = I18N.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    setI18nText(el, d[k] || en[k] || '');
+  });
+  const sel = document.getElementById('langSel'); if (sel) sel.value = code;
+}
+/* boot: Telegram auto login */
+(async function boot() {
+  try { setLang(localStorage.getItem('gf_lang') || 'en'); } catch (e) {}
+  const tg = window.Telegram && window.Telegram.WebApp;
+  async function tgLogin() {
+    if (!tg || !tg.initData) return false;
+    try {
+      const d = await api('/api/auth/telegram', { method: 'POST', body: JSON.stringify({ initData: tg.initData }) });
+      gfToken = d.token; localStorage.setItem('gf_token', gfToken); fillUser(d.user);
+      return true;
+    } catch (e) { return false; }
+  }
+  try {
+    if (tg) { tg.ready(); tg.expand(); }
+    if (!gfToken) await tgLogin();
+  } catch (e) {}
+  if (gfToken) {
+    // Verify the stored token still works (it expires in 30 days);
+    // if it is dead, drop it and log in fresh from Telegram —
+    // otherwise the app would sit on $0.00 forever.
+    try { const d = await api('/api/wallet/me'); fillUser(d.user); }
+    catch (e) { localStorage.removeItem('gf_token'); gfToken = ''; await tgLogin(); if (gfToken) loadMe(); }
+    loadBoard();
+  }
+})();
+</script>
+
+</body>
+</html>
