@@ -1060,6 +1060,13 @@ function unlock(){
     unlocked=true;
   }catch(e){}
   pickVoice();
+  /* sync: skip every sound/voice cue the video already passed while sound
+     was locked, so the audio starts at the video's current moment —
+     never a pile-up of old narration after a late first tap. */
+  try{
+    var mtNow=performance.now()-A0;
+    for(var ci=0;ci<CUES.length;ci++) if(CUES[ci].t<mtNow) fired[ci]=1;
+  }catch(e){}
 }
 document.addEventListener('pointerdown',unlock);
 document.addEventListener('keydown',unlock);
@@ -1079,6 +1086,9 @@ try{ speechSynthesis.onvoiceschanged=pickVoice; }catch(e){}
 function say(text,rate){
   try{
     if(!window.speechSynthesis)return;
+    /* sync guard: never let narration queue up behind the picture —
+       a new line cuts the old one, so voice always matches the screen */
+    try{ speechSynthesis.cancel(); }catch(e){}
     if(!voice)pickVoice();
     var u=new SpeechSynthesisUtterance(text);
     if(voice)u.voice=voice;
@@ -1163,14 +1173,14 @@ function loopStop(id){
 
 /* ---------- narration + event cues (absolute master ms) ---------- */
 var NAMES=['Cylinder block','Cylinder head','Piston','Piston rings','Gudgeon pin','Connecting rod','Crankshaft','Flywheel','Intake valve','Exhaust valve','Valve springs','Camshaft'];
-var DS=['Stroke one: Intake. The piston moves down, the intake valve opens, and only fresh air enters the cylinder.',
-'Stroke two: Compression. Both valves are closed. The air is squeezed, until it is hotter than five hundred degrees.',
-'Stroke three: Power! The injector sprays diesel into the hot air. It ignites by itself — no spark plug — and pushes the piston down.',
-'Stroke four: Exhaust. The exhaust valve opens, and the piston pushes the burnt gas out.'];
-var PS=['Stroke one: Intake. The piston moves down, and a mixture of air and petrol enters the cylinder.',
-'Stroke two: Compression. Both valves are closed, and the mixture is squeezed tight.',
-'Stroke three: Power! The spark plug fires! The mixture burns, and the gas pushes the piston down.',
-'Stroke four: Exhaust. The exhaust valve opens, and the burnt gas is pushed out.'];
+var DS=['Intake stroke. The piston moves down, the intake valve opens, and only fresh air enters.',
+'Compression stroke. Both valves closed. The air is squeezed hot — over five hundred degrees.',
+'Power stroke! Diesel sprays into the hot air, ignites by itself, and pushes the piston down.',
+'Exhaust stroke. The exhaust valve opens, and the piston pushes the burnt gas out.'];
+var PS=['Intake stroke. The piston moves down, and air mixed with petrol enters the cylinder.',
+'Compression stroke. Both valves closed. The mixture is squeezed tight.',
+'Power stroke! The spark plug fires, the mixture burns, and pushes the piston down.',
+'Exhaust stroke. The exhaust valve opens, and the piston pushes the burnt gas out.'];
 var CUES=[];
 function cue(t,fn){ CUES.push({t:t,fn:fn}); }
 function cue2(s2,fn){ cue(P2OFF+s2,fn); }
@@ -1190,23 +1200,23 @@ cue(46800,function(){ clickSnd(); creak(1.5); });
 /* Part 2 — room + diesel */
 cue2(150,function(){ blip(196,0.16,0.06,'square'); });
 cue2(850,function(){ blip(196,0.16,0.06,'square'); });
-cue2(600,sayCue('Welcome to the Engine Lab, Room 101. On the left, the petrol engine. On the right, the diesel engine. First, let us learn the diesel engine.',0.98));
+cue2(600,sayCue('Welcome to Room 101, the Engine Lab. Left side: petrol engine. Right side: diesel. First — the diesel engine.',1.05));
 NAMES.forEach(function(n,i){ cue2(T_DE+2500+i*2000+200,sayCue(n+'.',1.12)); cue2(T_DE+2500+i*2000,pop); });
 cue2(T_DE+2500+12*2000+200,sayCue('Fuel injector.',1.12)); cue2(T_DE+2500+12*2000,pop);
 cue2(T_DE+80,function(){ noiseHit(2.3,480,0.09); });
 cue2(T_DE+28500,function(){ noiseHit(2.3,480,0.09); });
-DS.forEach(function(s,i){ cue2(T_DE+EXD+i*7000+250,sayCue(s,0.98)); });
-cue2(T_DE+EXD+28000+400,sayCue('The diesel engine is running. One power stroke, in every two revolutions.'));
+DS.forEach(function(s,i){ cue2(T_DE+EXD+i*7000+250,sayCue(s,1.05)); });
+cue2(T_DE+EXD+28000+400,sayCue('The diesel engine is running. One power stroke, in every two revolutions.',1.05));
 cue2(T_B+700,sayCue('Diesel engine complete. Now, the petrol engine.'));
 /* Part 2 — petrol */
-NAMES.forEach(function(n,i){ cue2(T_PE+1500+i*1500+150,sayCue(n+'.',1.18)); cue2(T_PE+1500+i*1500,pop); });
+NAMES.forEach(function(n,i){ cue2(T_PE+1500+i*1500+150,sayCue(n+'.',1.25)); cue2(T_PE+1500+i*1500,pop); });
 cue2(T_PE+1500+12*1500+150,sayCue('Spark plug.',1.18)); cue2(T_PE+1500+12*1500,pop);
 cue2(T_PE+80,function(){ noiseHit(1.9,520,0.09); });
 cue2(T_PE+22000,function(){ noiseHit(1.9,520,0.09); });
-PS.forEach(function(s,i){ cue2(T_PE+EXP+i*7000+250,sayCue(s,0.98)); });
-cue2(T_PE+EXP+28000+400,sayCue('The petrol engine is running. The spark plug fires once, in every two revolutions.'));
+PS.forEach(function(s,i){ cue2(T_PE+EXP+i*7000+250,sayCue(s,1.05)); });
+cue2(T_PE+EXP+28000+400,sayCue('The petrol engine is running. One spark, in every two revolutions.',1.05));
 /* Ending — thanks to our teacher */
-cue2(T_END+3900,sayCue('With gratitude and respect, to our honourable class teacher, M D Sizan Miah. Thank you, sir.',0.95));
+cue2(T_END+3700,sayCue('With gratitude and respect to our class teacher, M D Sizan Miah. Thank you, sir.',1.0));
 /* stroke sound effects at each stroke start */
 function strokeSfx(si,T){ return function(){
   if(si===0)whoosh(); else if(si===1)squeeze();
@@ -1392,12 +1402,25 @@ function mkBtn(text,fn){
   return b;
 }
 function buildBar(){
+  /* hide the original file's recording controls + help note (kept in the
+     page so every button's wiring still works — they just don't show) */
+  var hideSt=document.createElement('style');
+  hideSt.textContent='.controls{display:none!important}.note{display:none!important}';
+  document.head.appendChild(hideSt);
+  try{
+    var topEl=document.querySelector('.top');
+    if(topEl){
+      var h1El=topEl.querySelector('h1'); if(h1El)h1El.textContent='POWER TECHNOLOGY';
+      var subEl=topEl.querySelector('span'); if(subEl)subEl.style.display='none';
+    }
+  }catch(e){}
   barEl=document.createElement('div'); barEl.id='ptBar';
-  barEl.style.cssText='position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:9999;display:none;gap:8px;align-items:center;background:rgba(9,13,19,.88);border:1px solid rgba(255,200,61,.35);border-radius:14px;padding:8px 10px;backdrop-filter:blur(6px)';
+  barEl.style.cssText='position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:60;display:none;gap:8px;align-items:center;background:rgba(9,13,19,.88);border:1px solid rgba(255,200,61,.35);border-radius:14px;padding:8px 10px;backdrop-filter:blur(6px)';
   barEl.appendChild(mkBtn('❮ Back',function(){ stepNav(-1); }));
   playBtn=mkBtn('❚❚ Pause',togglePlay); barEl.appendChild(playBtn);
   barEl.appendChild(mkBtn('Next ❯',function(){ stepNav(1); }));
-  document.body.appendChild(barEl);
+  var host=document.getElementById('frame')||document.body;
+  host.appendChild(barEl);
 }
 function refreshBar(){
   if(playBtn)playBtn.textContent=vPaused?'▶ Play':'❚❚ Pause';
