@@ -1386,6 +1386,23 @@ function togglePlay(){
   if(!vPaused&&playerStopped()){ var s2cur=performance.now()-A0-P2OFF; jumpToMt(P2OFF+STEPS[curStepIdx(Math.max(0,s2cur))].s2); return; }
   setPaused(!vPaused);
 }
+function buildFsBtn(){
+  try{
+    var fsB=document.createElement('button'); fsB.id='ptFs'; fsB.type='button';
+    fsB.textContent='\u26f6  Full Screen';
+    fsB.style.cssText='display:none;width:100%;margin-top:12px;padding:13px 0;background:#0d1117;border:1px solid rgba(255,200,61,.45);border-radius:12px;color:#ffc83d;font:700 16px "Hind Siliguri",system-ui,sans-serif;cursor:pointer';
+    fsB.addEventListener('click',function(){
+      try{
+        var fr=document.getElementById('frame'); if(!fr||!fr.requestFullscreen)return;
+        var p=fr.requestFullscreen();
+        if(p&&p.then)p.then(function(){
+          try{ if(screen.orientation&&screen.orientation.lock){ var lp=screen.orientation.lock('landscape'); if(lp&&lp.catch)lp.catch(function(){}); } }catch(e){}
+        }).catch(function(){});
+      }catch(e){}
+    });
+    document.body.appendChild(fsB);
+  }catch(e){}
+}
 function stepNav(dir){
   var s2cur=performance.now()-A0-P2OFF; if(s2cur<0)s2cur=0;
   var k=curStepIdx(s2cur), target;
@@ -1405,7 +1422,13 @@ function buildBar(){
   /* hide the original file's recording controls + help note (kept in the
      page so every button's wiring still works — they just don't show) */
   var hideSt=document.createElement('style');
-  hideSt.textContent='.controls{display:none!important}.note{display:none!important}';
+  hideSt.textContent='.controls{display:none!important}.note{display:none!important}'
+    +'@media (max-width:700px){'
+    +'body{display:flex;flex-direction:column;justify-content:center;min-height:100vh;min-height:100svh}'
+    +'#ptBar{padding:5px 6px;gap:6px;border-radius:10px;bottom:6px}'
+    +'#ptBar button{padding:7px 12px!important;font-size:13px!important;border-radius:8px!important}'
+    +'#ptFs{display:block!important}'
+    +'}';
   document.head.appendChild(hideSt);
   try{
     var topEl=document.querySelector('.top');
@@ -1431,7 +1454,7 @@ updateBar=function(mt){
   barEl.style.display=inRoom?'flex':'none';
   if(inRoom)refreshBar();
 };
-try{ buildBar(); }catch(e){}
+try{ buildBar(); buildFsBtn(); }catch(e){}
 document.addEventListener('keydown',function(e){
   if(!barEl||barEl.style.display==='none')return;
   if(e.code==='Space'){ e.preventDefault(); togglePlay(); }
